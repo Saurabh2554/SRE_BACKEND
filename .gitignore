@@ -1,0 +1,4 @@
+sreVenv/
+__pycache__/
+*.py[cod]
+.env
