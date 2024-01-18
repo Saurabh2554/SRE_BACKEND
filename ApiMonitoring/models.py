@@ -1,27 +1,21 @@
 import uuid
 from django.db import models
+from Business.models import BusinessUnit , SubBusinessUnit 
+from django.utils import timezone
+
+class ApiRequestDetails(models.Model):
+     id=models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+     BusinessUnitId = models.ForeignKey(BusinessUnit ,on_delete = models.CASCADE)
+     subBusinessUnitId = models.ForeignKey(SubBusinessUnit ,on_delete = models.CASCADE)
+     apiName = models.CharField(max_length = 100 , null = False , blank = False)
+     apiUrl = models.CharField(max_length= 100 , null = False , blank = False)
+     expectedResponseTime = models.IntegerField(null = False , blank = False)
+     requestPayload = models.JSONField(blank = False , null = False)
+     apiCallInterval = models.IntegerField(blank = False , null  = False)
+     createdAt = models.DateTimeField(default=timezone.now)
+     createdBy = models.EmailField(null = False , blank = True)
+     recipientDl = models.EmailField(null = False , blank = False)
 
 
-# Business Unit Model
-class BusinessUnit(models.Model):
-    id:models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    businessUnitName = models.CharField(max_length = 50 , blank=False,null = False)
-    businessUnitDescription = models.CharField(max_length = 100,blank=False,null = False)
-    businessUnitDl = models.EmailField(blank=False, null=False)
-    createdBy = models.EmailField(blank=False, null=False)
-
-    def __str__(self) ->str:
-        return self.businessUnitName
-    
-
-# Sub Business Unit Model 
-class SubBusinessUnit(models.Model):
-    id:models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    subBusinessUnitName = models.CharField(max_length = 50 , blank= False,null=False)
-    subBusinessUnitDescription = models.CharField(max_length = 100,blank= False,null=False)
-    subBusinessUnitDl = models.EmailField(blank=False, null=False)
-    businessUnitId = models.ForeignKey(BusinessUnit ,on_delete = models.CASCADE)
-    createdBy = models.EmailField(blank=False, null=False)
-
-    def __str__(self) ->str:
-        return self.subBusinessUnitName    
+     def __str__(self)->str:
+          return self.apiName

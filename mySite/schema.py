@@ -1,12 +1,12 @@
 import graphene
-import Business.Query.businessUnitQuery , Business.Query.businessUnitQuery
-import Business.Mutation.businessUnitMutation , Business.Mutation.subBusinessUnitMutation
+from Business import schema 
 
-class ConbinedQuery(Business.Query.businessUnitQuery ,Business.Query.businessUnitQuery, graphene.ObjectType):
+
+class Query(schema.Query):
     pass
 
 
-class ConbinedMutation(Business.Mutation.businessUnitMutation,Business.Mutation.subBusinessUnitMutation,graphene.ObjectType):
+class Mutation(schema.Mutation):
     pass
 
-schema = graphene.Schema(query = ConbinedQuery , mutation = ConbinedMutation)
+schema = graphene.Schema(query = Query, mutation = Mutation )

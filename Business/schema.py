@@ -1,16 +1,51 @@
 import graphene
-from graphene_django import DjangoObjectType
 from .models import BusinessUnit , SubBusinessUnit
-
-
-class BusinessUnitType(DjangoObjectType):
-    class Meta:
-        model = BusinessUnit
-        fields = "__all__"
-
-class SubBusinessUnitType(DjangoObjectType):
-    class Meta:
-        model = SubBusinessUnit
-        fields = "__all__"
+from .types import BusinessUnitType , SubBusinessUnitType
+from .mutations import BusinessUnitCreateMutation,BusinessUnitUpdateMutation, SubBusinessUnitCreateMutation,SubBusinessUnitUpdateMutation
         
                 
+class Query(graphene.ObjectType):
+    all_sub_business_unit = graphene.List(SubBusinessUnitType)
+    sub_business_unit = graphene.Field(SubBusinessUnitType , id = graphene.UUID(required = True))
+    all_business_unit = graphene.List(BusinessUnitType)
+    business_unit = graphene.Field(BusinessUnitType , id = graphene.UUID(required = True))
+    
+
+#Get all business unit objects
+    def resolve_all_business_unit(root , info):
+        try:
+         return BusinessUnit.objects.all()
+        except:
+            return None   
+ 
+#Retreive single business unit object based on id
+    def resolve_business_unit(root , info,**kwargs):
+        try:
+            id = kwargs.get('id')
+            if id is not None:
+             return BusinessUnit.objects.get(pk = id)
+        except:
+            return None
+
+#Get all sub-business unit objects
+    def resolve_all_sub_business_unit(root , info):
+        try:
+            return SubBusinessUnit.objects.all()
+        except:
+            return None
+          
+#Retreive single sub-business unit object based on id
+    def resolve_sub_business_unit(root , info,**kwargs):
+        try:
+            id = kwargs.get('id')
+            if id is not None:
+             return SubBusinessUnit.objects.get(pk = id)
+        except:
+            return None
+        
+# Mutation class exposing mutations
+class Mutation(graphene.ObjectType):
+    create_business_unit = BusinessUnitCreateMutation.Field() 
+    update_business_unit= BusinessUnitUpdateMutation.Field()   
+    create_subBusiness_unit = SubBusinessUnitCreateMutation.Field() 
+    update_subBusiness_unit= SubBusinessUnitUpdateMutation.Field()     
