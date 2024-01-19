@@ -1,7 +1,7 @@
 import graphene
-from .types import BusinessUnitType , SubBusinessUnitType
+from .types import BusinessUnitType , SubBusinessUnitType 
 from .models import BusinessUnit , SubBusinessUnit
-
+from graphql import GraphQLError
 
 # Create a business unit
 class BusinessUnitCreateMutation(graphene.Mutation):
@@ -11,19 +11,30 @@ class BusinessUnitCreateMutation(graphene.Mutation):
                 businessUnitDl = graphene.String(required = True)
                 createdBy = graphene.String(required = True)
 
-            businessUnit = graphene.Field(BusinessUnitType)
            
+            businessUnit = graphene.Field(BusinessUnitType)
+            success = graphene.Boolean()
+            message = graphene.String()
+
             def mutate(self, info, businessUnitName, businessUnitDescription,businessUnitDl,createdBy):
              try:
-                businessUnit = BusinessUnit.objects.create (
+
+                businessUnit = BusinessUnit.objects.filter(businessUnitName__iexact=f'{businessUnitName}')
+                
+                if businessUnit.exists():
+                    raise GraphQLError("Business with the same name already exist")
+                     
+                else:
+                    businessUnit = BusinessUnit.objects.create (
                     businessUnitName=businessUnitName, 
                     businessUnitDescription=businessUnitDescription,
                     businessUnitDl = businessUnitDl,
                     createdBy = createdBy
                     )
-                return BusinessUnitCreateMutation(businessUnit=businessUnit)    
-             except:
-                  return None
+                    return BusinessUnitCreateMutation(businessUnit=businessUnit,success = True , message = "Business unit created")    
+             except Exception as e:
+                raise GraphQLError(f"{str(e)}")
+                  
              
 #Update a Business Unit 
 class BusinessUnitUpdateMutation(graphene.Mutation):
@@ -32,7 +43,8 @@ class BusinessUnitUpdateMutation(graphene.Mutation):
         businessUnitDl = graphene.String(required = True)  
 
         businessUnit = graphene.Field(BusinessUnitType)
-
+        success = graphene.Boolean()
+        message = graphene.String()
         def mutate(seld , info,id,businessUnitDescription,businessUnitDl):
             try:
                 if id is not None:
@@ -44,12 +56,12 @@ class BusinessUnitUpdateMutation(graphene.Mutation):
 
                         return BusinessUnitUpdateMutation(businessUnit)
                     else:
-                        return {}
+                        raise GraphQLError("Business Unit with the given id does not exist")
                     
                 else:
-                    return {}
-            except:
-                 return None
+                    raise GraphQLError("Id field is required")
+            except Exception as e:
+                 raise GraphQLError(f"{str(e)}")
 
 #Create Sub business Unit
 class SubBusinessUnitCreateMutation(graphene.Mutation):
@@ -64,6 +76,11 @@ class SubBusinessUnitCreateMutation(graphene.Mutation):
 
     def mutate(self, info, subBusinessUnitName, subBusinessUnitDescription,subBusinessUnitDl,createdBy, businessUnitId):
          try:
+            subBusinessUnit = SubBusinessUnit.objects.filter(subBusinessUnitName__iexact=f'{subBusinessUnitName}')
+                
+            if subBusinessUnit.exists():
+                raise GraphQLError("Sub Business unit with the same name already exist")
+            else:
              subBusinessUnit = SubBusinessUnit.objects.create (
                 subBusinessUnitName=subBusinessUnitName, 
                 subBusinessUnitDescription=subBusinessUnitDescription,
@@ -72,8 +89,8 @@ class SubBusinessUnitCreateMutation(graphene.Mutation):
                 businessUnitId = businessUnitId
                 )
              return SubBusinessUnitCreateMutation(subBusinessUnit=subBusinessUnit)
-         except:
-              return None
+         except Exception as e:
+              raise GraphQLError(f"{str(e)}")
 
 #Update a Business Unit 
 class SubBusinessUnitUpdateMutation(graphene.Mutation):
@@ -94,9 +111,9 @@ class SubBusinessUnitUpdateMutation(graphene.Mutation):
 
                        return SubBusinessUnitUpdateMutation(subBusinessUnit)
                   else:
-                       return {}
+                       raise GraphQLError("Sub Business unit with the given id does not exist")
                   
              else:
-                  return {}
-        except:
-            return None     
+                raise GraphQLError("Id field is required")
+        except Exception as e:
+            raise GraphQLError(f"{str(e)}")     

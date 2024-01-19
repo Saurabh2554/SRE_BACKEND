@@ -1,7 +1,6 @@
 from graphene_django import DjangoObjectType
 from .models import BusinessUnit , SubBusinessUnit
 
-
 class BusinessUnitType(DjangoObjectType):
     class Meta:
       model = BusinessUnit
@@ -12,4 +11,4 @@ class SubBusinessUnitType(DjangoObjectType):
       model = SubBusinessUnit
       fields = "__all__"
 
-      
+     
