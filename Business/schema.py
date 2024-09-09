@@ -5,11 +5,11 @@ from .mutations import BusinessUnitCreateMutation,BusinessUnitUpdateMutation, Su
 from graphql import GraphQLError      
                 
 class Query(graphene.ObjectType):
-    all_sub_business_unit = graphene.List(SubBusinessUnitType)
+    all_sub_business_unit = graphene.List(SubBusinessUnitType )
     sub_business_unit = graphene.Field(SubBusinessUnitType , id = graphene.UUID(required = True))
     all_business_unit = graphene.List(BusinessUnitType)
     business_unit = graphene.Field(BusinessUnitType , id = graphene.UUID(required = True))
-    
+    sub_business_unit_per_business_unit = graphene.List(SubBusinessUnitType , id = graphene.UUID(required = True))
 
 #Get all business unit objects
     def resolve_all_business_unit(root , info):
@@ -46,7 +46,20 @@ class Query(graphene.ObjectType):
               raise GraphQLError("Id field is required") 
         except Exception as e:
             raise GraphQLError(f"{str(e)}")
+
+
+# Retreive all sub business unit which comes under a particular business unit---
+    def resolve_sub_business_unit_per_business_unit(root , info , **kwargs):
+        try:
+            id = kwargs.get('id')
+            if id is not None:
+              return SubBusinessUnit.objects.filter(businessUnit__iexact=f'{id}')
+            else:
+              raise GraphQLError("Id field is required") 
+        except Exception as e:
+            raise GraphQLError(f"{str(e)}")
         
+
 # Mutation class exposing mutations
 class Mutation(graphene.ObjectType):
     create_business_unit = BusinessUnitCreateMutation.Field() 

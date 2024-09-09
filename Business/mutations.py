@@ -31,7 +31,7 @@ class BusinessUnitCreateMutation(graphene.Mutation):
                     businessUnitDl = businessUnitDl,
                     createdBy = createdBy
                     )
-                    return BusinessUnitCreateMutation(businessUnit=businessUnit,success = True , message = "Business unit created")    
+                    return BusinessUnitCreateMutation(businessUnit,success = True , message = "Business unit created")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")
                   
@@ -75,19 +75,24 @@ class SubBusinessUnitCreateMutation(graphene.Mutation):
     subBusinessUnit = graphene.Field(SubBusinessUnitType)
     success = graphene.Boolean()
     message = graphene.String()
-    def mutate(self, info, subBusinessUnitName, subBusinessUnitDescription,subBusinessUnitDl,createdBy, businessUnitId):
+    def mutate(self, info, subBusinessUnitName, subBusinessUnitDescription,subBusinessUnitDl,createdBy, businessUnit):
          try:
             subBusinessUnit = SubBusinessUnit.objects.filter(subBusinessUnitName__iexact=f'{subBusinessUnitName}')
-                
+            businessUnitObj = BusinessUnit.objects.get(pk=businessUnit)   
+
             if subBusinessUnit.exists():
                 raise GraphQLError("Sub Business unit with the same name already exist")
+            
+            elif businessUnitObj is None:
+                raise GraphQLError("Incorrect Business unit given")
+            
             else:
              subBusinessUnit = SubBusinessUnit.objects.create (
                 subBusinessUnitName=subBusinessUnitName, 
                 subBusinessUnitDescription=subBusinessUnitDescription,
                 subBusinessUnitDl = subBusinessUnitDl,
                 createdBy = createdBy,
-                businessUnitId = businessUnitId
+                businessUnit = businessUnitObj
                 )
              return SubBusinessUnitCreateMutation(subBusinessUnit=subBusinessUnit,success = True , message = "Business unit created")
          except Exception as e:
