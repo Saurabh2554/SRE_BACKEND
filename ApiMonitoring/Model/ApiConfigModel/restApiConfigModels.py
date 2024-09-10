@@ -12,7 +12,7 @@ class RestAPIConfig(models.Model):
 
 class RestAPIMetrics(models.Model):
     status_code = models.IntegerField(null=True, blank=True)  # HTTP status code
-    response_payload = models.JSONField(null=True, blank=True)  # REST API response payload
+    # response_payload = models.JSONField(null=True, blank=True)  # REST API response payload
 
     def __str__(self):
         return f"REST Metrics (Status Code: {self.status_code})"                
