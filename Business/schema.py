@@ -53,7 +53,7 @@ class Query(graphene.ObjectType):
         try:
             id = kwargs.get('id')
             if id is not None:
-              return SubBusinessUnit.objects.filter(businessUnit__iexact=f'{id}')
+              return SubBusinessUnit.objects.filter(businessUnit=f'{id}')
             else:
               raise GraphQLError("Id field is required") 
         except Exception as e:
