@@ -4,7 +4,7 @@ from ..ApiConfigModel.restApiConfigModels import RestAPIConfig
 from ..ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
 from ..AuthTypeModel.authConfigModels import Authentication
 from Business.models import BusinessUnit , SubBusinessUnit
-
+from django.utils import timezone
 
 class MonitoredAPI(models.Model):
     API_TYPE_CHOICES = [
@@ -25,11 +25,11 @@ class MonitoredAPI(models.Model):
     headers = models.JSONField(null=True, blank=True)  # Optional custom headers
 
     # Link to authentication system
-    authentication = models.ForeignKey(Authentication, on_delete=models.SET_NULL, null=True, blank=True)  # Foreign key to Authentication
+    # authentication = models.ForeignKey(Authentication, on_delete=models.SET_NULL, null=True, blank=True)  # Foreign key to Authentication
     
     # REST and GraphQL-specific configurations
-    restApiConfig = models.OneToOneField(RestAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
-    graphqlApiconfig = models.OneToOneField(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
+    restApiConfig = models.ForeignKey(RestAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
+    graphqlApiconfig = models.ForeignKey(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
 
     # Timestamps
     createdAt = models.DateTimeField(default=timezone.now)
