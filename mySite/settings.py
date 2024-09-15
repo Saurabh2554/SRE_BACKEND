@@ -29,7 +29,9 @@ INSTALLED_APPS = [
     'ApiMonitoring',
     'graphene_django',
     'Business',
-    "corsheaders"
+    "corsheaders",
+    'django_celery_beat',
+    'django_celery_results',
 
 ]
 
@@ -129,3 +131,18 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Celery settings
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis as the broker
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: store task results in Redis
+
+# Store Celery task results in the Django database
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+# Celery Beat settings (for periodic tasks)
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'

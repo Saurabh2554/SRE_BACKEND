@@ -5,6 +5,7 @@ from  ...ApiConfigModel.restApiConfigModels import RestAPIConfig
 from  ...ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
 from  Business.models import BusinessUnit , SubBusinessUnit
 from graphql import GraphQLError
+from ..tasks import monitor_api_task
 
 
 #Monitored  Api input values
@@ -80,6 +81,20 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 recipientDl = input.recipientDl,
                 createdBy = input.createdBy,
                 )
+
+                monitor_api_task.apply_async(
+                kwargs={
+                    'api_id': monitoredApi.id,
+                    'api_url': monitoredApi.apiUrl,
+                    'api_type': monitoredApi.apiType,
+                    'headers': monitoredApi.headers,
+                    'interval': monitoredApi.apiCallInterval,
+                    'graphql_query': monitoredApi.graphqlApiconfig.graphql_query if monitoredApi.apiType == 'GraphQL' else None
+                },
+                countdown=10  # Adjust as needed
+                )
+
+
                 return ApiMonitorCreateMutation(monitoredApi = monitoredApi,success = True , message = "New api monitoring started")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")
