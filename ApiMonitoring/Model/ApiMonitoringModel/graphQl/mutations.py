@@ -60,7 +60,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
                 if input.apiType == 'GraphQL':
                     graphQlApiConfig = GraphQLAPIConfig.objects.create(
-                        graphql_query = input.graphqlQuery
+                    graphql_query = input.graphqlQuery
                         
                     )    
 
@@ -80,7 +80,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 recipientDl = input.recipientDl,
                 createdBy = input.createdBy,
                 )
-                return ApiMonitorCreateMutation(monitoredApi = monitoredApi,success = True , message = "New api monitoring started")    
+                return ApiMonitorCreateMutation(monitoredApi = monitoredApi, success = True , message = "New api monitoring started")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")
                   
