@@ -1,9 +1,9 @@
 import graphene
-from .Model.AuthTypeModel.graphQl import authChoices_queries
-from .Model.ApiMonitoringModel.graphQl import apiTypeChoices_queries
-from .Model.ApiMonitoringModel.graphQl import mutations
+from ApiMonitoring.Model.AuthTypeModel.graphQl import authChoices_queries
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl import queries
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl import mutations
 
-class Query(authChoices_queries.Query, apiTypeChoices_queries.Query):
+class Query(authChoices_queries.Query, queries.Query):
    pass
 
 class Mutation(graphene.ObjectType):   

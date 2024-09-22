@@ -1,10 +1,11 @@
 import graphene
 from .types import MoniterApiType 
-from  ..apiMonitorModels import MonitoredAPI 
-from  ...ApiConfigModel.restApiConfigModels import RestAPIConfig
-from  ...ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
+from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI 
+from  ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIConfig
+from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
 from  Business.models import BusinessUnit , SubBusinessUnit
 from graphql import GraphQLError
+# from ApiMonitoring.tasks import add
 
 
 #Monitored  Api input values
@@ -50,7 +51,8 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 # print(businessUnit,subBusinessUnit,"gggggggggggggggggg")
                 
                 if monitoredApi.exists():
-                    raise GraphQLError("Api with the same url already exists")
+                    raise GraphQLError("Same service already being monitored")
+                   
 
                 if input.apiType == 'REST':
                     restApiConfig = RestAPIConfig.objects.create(
@@ -60,11 +62,9 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
                 if input.apiType == 'GraphQL':
                     graphQlApiConfig = GraphQLAPIConfig.objects.create(
-                    graphql_query = input.graphqlQuery
-                        
+                    graphql_query = input.graphqlQuery     
                     )    
 
-                
                 monitoredApi = MonitoredAPI.objects.create(
                 businessUnit=businessUnit, 
                 subBusinessUnit = subBusinessUnit,
@@ -80,6 +80,9 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 recipientDl = input.recipientDl,
                 createdBy = input.createdBy,
                 )
+
+                # response = add.delay(2, 4, monitorApi.id)
+
                 return ApiMonitorCreateMutation(monitoredApi = monitoredApi, success = True , message = "New api monitoring started")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")

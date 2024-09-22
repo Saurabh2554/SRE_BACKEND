@@ -33,7 +33,9 @@ INSTALLED_APPS = [
     'ApiMonitoring',
     'graphene_django',
     'Business',
-    "corsheaders"
+    "corsheaders",
+    "django_celery_results"
+    
 
 ]
 
@@ -81,10 +83,7 @@ DATABASES = {
         "HOST": os.getenv('HOST'),
         "PORT": os.getenv('PORT'),
     }
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
+   
 }
 GRAPHENE = {
     'SCHEMA':'mySite.schema.schema',
@@ -93,6 +92,17 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     # "http://127.0.0.1:9000",
 ]
+
+
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')  # Redis as the message broker
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')  # Redis to store task results
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 

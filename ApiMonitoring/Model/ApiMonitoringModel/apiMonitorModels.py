@@ -1,8 +1,8 @@
 import uuid
 from django.db import models
-from ..ApiConfigModel.restApiConfigModels import RestAPIConfig
-from ..ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
-from ..AuthTypeModel.authConfigModels import Authentication
+from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIConfig
+from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
+from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from Business.models import BusinessUnit , SubBusinessUnit
 from django.utils import timezone
 

@@ -1,5 +1,5 @@
 import graphene
-from  ..authConfigModels import Authentication  # Import the Authentication model
+from  ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication  # Import the Authentication model
   
 
 

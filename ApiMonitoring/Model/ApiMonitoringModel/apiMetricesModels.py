@@ -1,7 +1,7 @@
 from django.db import models
-from ..ApiConfigModel.restApiConfigModels import RestAPIMetrics
-from ..ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
-from .apiMetricesModels import MonitoredAPI
+from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIMetrics
+from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
+from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 
 class APIMetrics(models.Model):
     api = models.ForeignKey(MonitoredAPI, on_delete=models.CASCADE, related_name='metrics')  # Link to the API being monitored
