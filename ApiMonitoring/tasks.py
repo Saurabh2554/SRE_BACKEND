@@ -13,27 +13,26 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def monitorApi(apiType, apiUrl, headers, id):
-    try:
-        if apiType == 'REST':
-            try:
-                result = hitRestApi(apiUrl)
+    if apiType == 'REST':
+        
+        result = hitRestApi(apiUrl)
 
-                #saving mertices---
-                monitoredApi = MonitoredApi.objects.get(pk = id)
-                restApiMetrices = RestAPIMetrics.objects.create(
-                    status_code = result['status_code']
-                )
-                apiMetrices = APIMetrics.objects.create(
-                     api = monitorApi,
-                     responseTime = result['response_time'],
-                     success = True,
-                     rest_metrices = restApiMetrices
-                )
+        #saving mertices---
+        monitoredApi = MonitoredApi.objects.get(pk = id)
+        restApiMetrices = RestAPIMetrics.objects.create(
+            status_code = result['status_code']
+        )
+        apiMetrices = APIMetrics.objects.create(
+                api = monitorApi,
+                responseTime = result['response_time'],
+                success = True,
+                rest_metrices = restApiMetrices
+        )
+    elif apiType == 'GraphQL':
+        
+        
 
-            except Exception as e:
-                raise GraphQlError(f"{e}")
-            
-    except:
+    
 
     
 
