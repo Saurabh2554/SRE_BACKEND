@@ -4,7 +4,7 @@
 
 # # __all__ = ('SRE_CELERY_APP',)
 # #https://qa.api.data-axle.com/v1/lookups/yellow_page_codes/download
-# #https://rickandmortyapi.com/api/characte/70
+# #https://rickandmortyapi.com/api/character/70
 # try:
 #     response = requests.get('https://qa.api.data-axle.com/v1/lookups/yellow_page_codes/downloa')
 #     response.raise_for_status()

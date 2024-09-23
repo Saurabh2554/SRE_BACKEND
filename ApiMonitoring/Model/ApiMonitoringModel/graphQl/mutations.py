@@ -83,7 +83,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
                 # response = add.delay(2, 4, monitorApi.id)
 
-                return ApiMonitorCreateMutation(monitoredApi = monitoredApi, success = True , message = "New api monitoring started")    
+                return ApiMonitorCreateMutation(monitoredApi = monitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")
                   

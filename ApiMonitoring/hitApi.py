@@ -4,9 +4,9 @@ import requests
 class APIError(Exception):
     pass
 
-def hitRestApi(apiUrl, headers={}):
+def hitRestApi(apiUrl, headers=None):
     try:
-        response = requests.get(apiUrl)
+        response = requests.get(apiUrl, headers = headers)
         response.raise_for_status()
         response_time = response.elapsed.total_seconds()
         
