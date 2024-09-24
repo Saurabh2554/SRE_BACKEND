@@ -9,7 +9,7 @@ class APIMetrics(models.Model):
 
     # Common fields for both REST and GraphQL
     responseTime = models.FloatField(null=True, blank=True)  # Time taken to get a response
-    success = models.BooleanField(default=False)  # Whether the request was successful
+    success = models.BooleanField(default=True)  # Whether the request was successful
     errorMessage = models.TextField(null=True, blank=True)  # Error message if any
     statusCode = models.IntegerField(null=True, blank=True)
     

@@ -5,7 +5,7 @@ from  ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIConfi
 from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
 from  Business.models import BusinessUnit , SubBusinessUnit
 from graphql import GraphQLError
-# from ApiMonitoring.tasks import add
+from ApiMonitoring.tasks import monitorApi
 
 
 #Monitored  Api input values
@@ -21,8 +21,8 @@ class MonitoredApiInput(graphene.InputObjectType):
     headers = graphene.JSONString() 
     graphqlQuery = graphene.String()
     # authentication = graphene.UUID(required = True)
-    restApiConfig = graphene.UUID(required = True)
-    graphqlApiconfig = graphene.UUID(required = True)
+    restApiConfig = graphene.UUID()
+    graphqlApiconfig = graphene.UUID()
     recipientDl = graphene.String()
     createdBy = graphene.String()
 
@@ -41,16 +41,16 @@ class ApiMonitorCreateMutation(graphene.Mutation):
              try:
                 graphQlApiConfig = None
                 restApiConfig = None
-                monitoredApi = MonitoredAPI.objects.filter(
-                    apiUrl__iexact=f'{input.apiUrl}'
-                    )
+                # monitoredApi = MonitoredAPI.objects.filter(
+                #     apiUrl__iexact=f'{input.apiUrl}'
+                #     )
                 businessUnit = BusinessUnit.objects.get(pk = input.businessUnit)
                 subBusinessUnit = SubBusinessUnit.objects.get(pk = input.subBusinessUnit)
                 
 
                 
-                if monitoredApi.exists():
-                    raise GraphQLError("Same service already being monitored")
+                # if monitoredApi.exists():
+                #     raise GraphQLError("Same service already being monitored")
                    
 
                 if input.apiType == 'REST':
@@ -80,7 +80,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 createdBy = input.createdBy,
                 )
 
-                # response = add.delay(2, 4, monitorApi.id)
+                response = monitorApi.delay(input.apiUrl, input.apiType, input.headers, monitoredApi.id)
 
                 return ApiMonitorCreateMutation(monitoredApi = monitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:

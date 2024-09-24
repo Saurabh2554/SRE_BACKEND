@@ -5,6 +5,7 @@ from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 # from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
+from graphql import GraphQLError
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 @shared_task
 def monitorApi(apiUrl, apiType, headers, id):
     try:    
-        result = hit_api(apiUrl, apiType, headerds)
-        monitoredApi = MonitoredApi.objects.get(pk = id)
+        result = hit_api(apiUrl, apiType, headers)
+        monitoredApi = MonitoredAPI.objects.get(pk = id)
         
         if monitoredApi is not None:
         #saving mertices--- 
@@ -25,11 +26,14 @@ def monitorApi(apiUrl, apiType, headers, id):
                 statusCode = result['status'],
                 errorMessage = result['error_message']
             )
+            return "Monitored"
         else:
             pass
 
     except Exception as ex:
-        pass
+        raise GraphQLError(
+            f"{ex}"
+        )
 
         
         
