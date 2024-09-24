@@ -1,6 +1,6 @@
 from django.db import models
-from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIMetrics
-from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
+# from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIMetrics
+# from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 
 class APIMetrics(models.Model):
@@ -11,13 +11,7 @@ class APIMetrics(models.Model):
     responseTime = models.FloatField(null=True, blank=True)  # Time taken to get a response
     success = models.BooleanField(default=False)  # Whether the request was successful
     errorMessage = models.TextField(null=True, blank=True)  # Error message if any
-    
-    # REST API-specific metrics
-    rest_metrices =models.ForeignKey(RestAPIMetrics, on_delete=models.CASCADE, null=True, blank=True)  # Foreign key to Authentication
-    
-    
-    # GraphQL-specific metrics
-    graphql_metrices = modes.ForeignKey(GraphQLAPIMetrics,on_delete=models.CASCADE,null=True, blank=True)
+    statusCode = models.IntegerField(null=True, blank=True)
     
     def __str__(self):
         return f"Metrics for {self.api.name} at {self.timestamp}"

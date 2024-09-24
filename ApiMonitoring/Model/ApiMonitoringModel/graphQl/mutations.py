@@ -21,8 +21,8 @@ class MonitoredApiInput(graphene.InputObjectType):
     headers = graphene.JSONString() 
     graphqlQuery = graphene.String()
     # authentication = graphene.UUID(required = True)
-    # restApiConfig = graphene.UUID(required = True)
-    # graphqlApiconfig = graphene.UUID(required = True)
+    restApiConfig = graphene.UUID(required = True)
+    graphqlApiconfig = graphene.UUID(required = True)
     recipientDl = graphene.String()
     createdBy = graphene.String()
 
@@ -48,7 +48,6 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 subBusinessUnit = SubBusinessUnit.objects.get(pk = input.subBusinessUnit)
                 
 
-                # print(businessUnit,subBusinessUnit,"gggggggggggggggggg")
                 
                 if monitoredApi.exists():
                     raise GraphQLError("Same service already being monitored")

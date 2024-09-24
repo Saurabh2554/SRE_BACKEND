@@ -1,34 +1,36 @@
-
-from celery import shared_task
 import logging
-
+from celery import shared_task
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
-from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIMetrics
+# from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIMetrics
+# from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
-from ApiMonitoring.hitApi import hitRestApi
-# Get an instance of a logger
+from ApiMonitoring.hitApi import hit_api
+
 logger = logging.getLogger(__name__)
 
 
 
 @shared_task
-def monitorApi(apiType, apiUrl, headers, id):
-    if apiType == 'REST':
-        
-        result = hitRestApi(apiUrl)
-
-        #saving mertices---
+def monitorApi(apiUrl, apiType, headers, id):
+    try:    
+        result = hit_api(apiUrl, apiType, headerds)
         monitoredApi = MonitoredApi.objects.get(pk = id)
-        restApiMetrices = RestAPIMetrics.objects.create(
-            status_code = result['status_code']
-        )
-        apiMetrices = APIMetrics.objects.create(
-                api = monitorApi,
+        
+        if monitoredApi is not None:
+        #saving mertices--- 
+            apiMetrices = APIMetrics.objects.create(
+                api = monitoredApi,
                 responseTime = result['response_time'],
-                success = True,
-                rest_metrices = restApiMetrices
-        )
-    elif apiType == 'GraphQL':
+                success = result['success'],
+                statusCode = result['status'],
+                errorMessage = result['error_message']
+            )
+        else:
+            pass
+
+    except Exception as ex:
+        pass
+
         
         
 

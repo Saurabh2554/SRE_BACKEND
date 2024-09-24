@@ -1,5 +1,6 @@
 import requests
-
+from operator import attrgetter
+from types import SimpleNamespace
 class APIError(Exception):
     pass
 
@@ -17,32 +18,41 @@ def handle_response(response):
         502: "Bad Gateway: Received an invalid response from the upstream server.",
         503: "Service Unavailable: The server is not ready to handle the request."
     }
-    
+    response_time = response.elapsed.total_seconds()
+    message = None
+
     if response.status_code in error_messages:
         message = error_messages[response.status_code]
-    else:
-        message = "An unknown HTTP error occurred."
 
-    raise APIError(f"{response.status_code}: {response.reason}")
+    return {
+            'status': response.status_code, 
+            'response_time': response_time * 1000, 
+            'error_message':  message, 
+            'success':False if message else True
+            }
 
 def hit_api(api_url, api_type='REST', headers=None, payload=None):
     try:
+        response = None
         if api_type.upper() == 'REST':
             response = requests.get(api_url, headers=headers)
 
         elif api_type.upper() == 'GRAPHQL':
             response = requests.post(api_url, json=payload, headers = headers)
+            
            
         else:
             raise ValueError("Unsupported API type. Use 'REST' or 'GRAPHQL'.")
         
         response.raise_for_status()
-        response_time = response.elapsed.total_seconds()
 
-        return {'status': response.status_code, 'response_time': response_time * 1000}
 
-    except requests.exceptions.HTTPError:
-        handle_response(response)
+        print(f"response.payload is {response.json()}")
+        return handle_response(response)
+
+    except requests.exceptions.HTTPError as err_msg:
+        raise APIError(f"{attrgetter('status', 'error_message','success')(SimpleNamespace(**handle_response(response)))}")
+
 
     except requests.exceptions.RequestException as req_error:
         raise Exception(f"Request failed: {req_error}")
