@@ -1,8 +1,9 @@
-# import requests
-# # from __future__ import absolute_import, unicode_literals
-# # from .celery import app as SRE_CELERY_APP
+from __future__ import absolute_import, unicode_literals
+from .celery import app as SRE_CELERY_APP
 
-# # __all__ = ('SRE_CELERY_APP',)
+__all__ = ('SRE_CELERY_APP')
+
+
 # #https://qa.api.data-axle.com/v1/lookups/yellow_page_codes/download
 # #https://rickandmortyapi.com/api/character/70
 # try:
