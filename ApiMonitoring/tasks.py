@@ -6,6 +6,7 @@ from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
 from graphql import GraphQLError
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,19 @@ def monitorApi(apiUrl, apiType, headers, id):
     try:    
         result = hit_api(apiUrl, apiType, headers)
         monitoredApi = MonitoredAPI.objects.get(pk = id)
+
+        
+        # To check the validation for  isAPIActive
+        current_date = datetime.now(monitoredApi.createdAt.tzinfo)
+        api_duration = current_date - monitoredApi.createdAt
+
+        if api_duration.days > monitoredApi.apiMonitorDuration:
+            monitoredApi.isApiActive = False
+            monitoredApi.save()
+            return f"API monitoring stopped for {monitoredApi.apiName} after exceeding {monitoredApi.apiMonitorDuration} days."
+
+        if not monitoredApi.isApiActive:
+            return f"Monitoring skipped for {monitoredApi.apiName} as it is inactive."
         
         if monitoredApi is not None:
         #saving mertices--- 

@@ -4,6 +4,7 @@ from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAP
 from  ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIConfig
 from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
 from  Business.models import BusinessUnit , SubBusinessUnit
+from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from graphql import GraphQLError
 from ApiMonitoring.tasks import monitorApi
 
@@ -25,6 +26,7 @@ class MonitoredApiInput(graphene.InputObjectType):
     graphqlApiconfig = graphene.UUID()
     recipientDl = graphene.String()
     createdBy = graphene.String()
+    apiMonitorduration  = graphene.Int()
 
 
 # Monitor a new Api
@@ -41,18 +43,35 @@ class ApiMonitorCreateMutation(graphene.Mutation):
              try:
                 graphQlApiConfig = None
                 restApiConfig = None
-                # monitoredApi = MonitoredAPI.objects.filter(
-                #     apiUrl__iexact=f'{input.apiUrl}'
-                #     )
+
+                # authentication = Authentication.objects.get(pk=input.authentication)
+                
+
+                existingMonitorAPIs = MonitoredAPI.objects.filter(
+                    apiUrl__iexact=f'{input.apiUrl}',
+                    apiType=input.apiType
+                    ).first()
+                
                 businessUnit = BusinessUnit.objects.get(pk = input.businessUnit)
                 subBusinessUnit = SubBusinessUnit.objects.get(pk = input.subBusinessUnit)
                 
 
+                # print(businessUnit,subBusinessUnit,"gggggggggggggggggg")
                 
-                # if monitoredApi.exists():
-                #     raise GraphQLError("Same service already being monitored")
-                   
-
+                if existingMonitorAPIs is not None:
+                    if not existingMonitorAPIs.isApiActive:
+                        # Reactive the paused API
+                        existingMonitorAPIs.isApiActive = True
+                        existingMonitorAPIs.save()
+                        return ApiMonitorCreateMutation(
+                            monitoredApi = existingMonitorAPIs,
+                            success = True,
+                            message = "API monitoring reactivated"
+                        )
+                    else: 
+                        raise GraphQLError("Same service already being monitored")
+                        
+                    
                 if input.apiType == 'REST':
                     restApiConfig = RestAPIConfig.objects.create(
                         method = input.apiType,
@@ -64,7 +83,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                     graphql_query = input.graphqlQuery     
                     )    
 
-                monitoredApi = MonitoredAPI.objects.create(
+                newMonitoredApi = MonitoredAPI.objects.create(
                 businessUnit=businessUnit, 
                 subBusinessUnit = subBusinessUnit,
                 apiName = input.apiName,
@@ -73,16 +92,18 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 apiCallInterval = input.apiCallInterval, 
                 expectedResponseTime = input.expectedResponseTime,  
                 headers = input.headers, 
-                # authentication = input.authentication
+                # authentication = authentication
                 restApiConfig = restApiConfig,
                 graphqlApiconfig = graphQlApiConfig,
                 recipientDl = input.recipientDl,
                 createdBy = input.createdBy,
+                apiMonitorduration = input.apiMonitorDuration
+                
                 )
 
-                response = monitorApi.delay(input.apiUrl, input.apiType, input.headers, monitoredApi.id)
+                response = monitorApi.delay(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
 
-                return ApiMonitorCreateMutation(monitoredApi = monitoredApi, success = True , message = "Api monitoring started")    
+                return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")
                   
