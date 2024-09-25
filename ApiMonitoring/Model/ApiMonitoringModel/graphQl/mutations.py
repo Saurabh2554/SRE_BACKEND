@@ -6,7 +6,7 @@ from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAP
 from  Business.models import BusinessUnit , SubBusinessUnit
 from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from graphql import GraphQLError
-# from ApiMonitoring.tasks import add
+from ApiMonitoring.tasks import monitorApi
 
 
 #Monitored  Api input values
@@ -22,10 +22,11 @@ class MonitoredApiInput(graphene.InputObjectType):
     headers = graphene.JSONString() 
     graphqlQuery = graphene.String()
     # authentication = graphene.UUID(required = True)
-    # restApiConfig = graphene.UUID(required = True)
-    # graphqlApiconfig = graphene.UUID(required = True)
+    restApiConfig = graphene.UUID()
+    graphqlApiconfig = graphene.UUID()
     recipientDl = graphene.String()
     createdBy = graphene.String()
+    apiMonitorduration  = graphene.Int()
 
 
 # Monitor a new Api
@@ -63,6 +64,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                         existingMonitorAPIs.isApiActive = True
                         existingMonitorAPIs.save()
                         return ApiMonitorCreateMutation(
+                            monitoredApi = existingMonitorAPIs,
                             success = True,
                             message = "API monitoring reactivated"
                         )
@@ -95,9 +97,11 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 graphqlApiconfig = graphQlApiConfig,
                 recipientDl = input.recipientDl,
                 createdBy = input.createdBy,
+                apiMonitorduration = input.apiMonitorDuration
+                
                 )
 
-                # response = add.delay(2, 4, monitorApi.id)
+                response = monitorApi.delay(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
 
                 return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:

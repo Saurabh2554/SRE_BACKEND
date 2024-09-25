@@ -12,6 +12,7 @@ class apiTypeChoice(graphene.ObjectType):
 class validateApiResponse(graphene.ObjectType):
     status = graphene.Int() 
     response_time = graphene.Float()
+    success = graphene.Boolean()
 
 
 class Query(graphene.ObjectType):
@@ -35,17 +36,18 @@ class Query(graphene.ObjectType):
             if apiType == 'REST':
 
                 headers_dict = json.loads(headers) if headers else {}
-                result =  hit_api(apiUrl,apiType, headers_dict) 
+                result =  hit_api(apiUrl, apiType, headers_dict) 
 
             elif apiType == 'GraphQL' :
-                
+                if query is None:
+                    raise GraphQLError("Query field is required if youur api type is GraphQl")
                 payload = {
                     'query': query
                 }
                 
                 result = hit_api(apiUrl, apiType, headers, payload)
 
-            return validateApiResponse(status = result['status'], response_time = result['response_time'])    
+            return validateApiResponse(status = result['status'], response_time = result['response_time'], success = result['success'])    
 
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
