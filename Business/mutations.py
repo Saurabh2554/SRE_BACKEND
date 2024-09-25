@@ -45,7 +45,7 @@ class BusinessUnitUpdateMutation(graphene.Mutation):
         businessUnit = graphene.Field(BusinessUnitType)
         success = graphene.Boolean()
         message = graphene.String()
-        def mutate(seld , info,id,businessUnitDescription,businessUnitDl):
+        def mutate(self, info, id, businessUnitDescription, businessUnitDl):
             try:
                 if id is not None:
                     businessUnit = BusinessUnit.objects.get(pk=id)
@@ -94,7 +94,7 @@ class SubBusinessUnitCreateMutation(graphene.Mutation):
                 createdBy = createdBy,
                 businessUnit = businessUnitObj
                 )
-             return SubBusinessUnitCreateMutation(subBusinessUnit=subBusinessUnit,success = True , message = "Business unit created")
+             return SubBusinessUnitCreateMutation(subBusinessUnit=subBusinessUnit,success = True , message = "Sub Business unit created")
          except Exception as e:
               raise GraphQLError(f"{str(e)}")
 
@@ -107,7 +107,7 @@ class SubBusinessUnitUpdateMutation(graphene.Mutation):
      subBusinessUnit = graphene.Field(SubBusinessUnitType)
      success = graphene.Boolean()
      message = graphene.String()
-     def mutate(seld , info,id,subBusinessUnitDescription,subBusinessUnitDl):
+     def mutate(self, info, id, subBusinessUnitDescription, subBusinessUnitDl):
         try:
              if id is not None:
                   subBusinessUnit = SubBusinessUnit.objects.get(pk=id)

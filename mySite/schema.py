@@ -1,12 +1,13 @@
 import graphene
-from Business import schema 
+from Business import schema as business_schema 
+from ApiMonitoring import schema as apiMonitoring_schema
 
 
-class Query(schema.Query):
+class Query(business_schema.Query,apiMonitoring_schema.Query):
     pass
 
 
-class Mutation(schema.Mutation):
+class Mutation(business_schema.Mutation, apiMonitoring_schema.Mutation):
     pass
 
 schema = graphene.Schema(query = Query, mutation = Mutation )
