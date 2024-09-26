@@ -32,7 +32,7 @@ class MonitoredAPI(models.Model):
     graphqlApiconfig = models.ForeignKey(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
 
     # Tracking the monitoring status
-    isApiActive = models.BooleanField(default=True)  # Status if API is being monitored or not
+    isApiActive = models.BooleanField(default=False)  # Status if API is being monitored or not
 
     # Timestamps
     createdAt = models.DateTimeField(default=timezone.now)

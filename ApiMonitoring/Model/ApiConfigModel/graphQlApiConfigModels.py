@@ -3,6 +3,7 @@ from django.db import models
 
 class GraphQLAPIConfig(models.Model):
     graphql_query = models.TextField()  # Query or mutation for GraphQL API
+    graphql_value = models.TextField()  # Query or mutation for GraphQL API
     
     def __str__(self):
         return f"GraphQL Config (Query: {self.graphql_query[:50]}...)"  # Show first 50 chars of the query

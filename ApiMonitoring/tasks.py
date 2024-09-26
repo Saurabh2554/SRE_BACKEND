@@ -23,13 +23,13 @@ def monitorApi(apiUrl, apiType, headers, id):
         current_date = datetime.now(monitoredApi.createdAt.tzinfo)
         api_duration = current_date - monitoredApi.createdAt
 
-        if api_duration.days > monitoredApi.apiMonitorDuration:
-            monitoredApi.isApiActive = False
-            monitoredApi.save()
-            return f"API monitoring stopped for {monitoredApi.apiName} after exceeding {monitoredApi.apiMonitorDuration} days."
+        # if api_duration.days > monitoredApi.apiMonitorDuration:
+        #     monitoredApi.isApiActive = False
+        #     monitoredApi.save()
+        #     return f"API monitoring stopped for {monitoredApi.apiName} after exceeding {monitoredApi.apiMonitorDuration} days."
 
-        if not monitoredApi.isApiActive:
-            return f"Monitoring skipped for {monitoredApi.apiName} as it is inactive."
+        # if not monitoredApi.isApiActive:
+        #     return f"Monitoring skipped for {monitoredApi.apiName} as it is inactive."
         
         if monitoredApi is not None:
         #saving mertices--- 

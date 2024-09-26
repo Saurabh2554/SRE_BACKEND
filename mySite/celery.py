@@ -16,7 +16,7 @@ app.conf.enable_utc=False
 app.conf.update(timezone='Asia/Kolkata')
 # app.conf.beat_schedule = {
 #     'monitor-api-1-monthly': {
-#         'task': 'your_app.tasks.monitor_api',
+#         'task': 'ApiMonitoring.tasks.monitorApi',
 #         'schedule': crontab(minute='*/5'),  # Every 5 minutes
 #         'args': ('https://api1.example.com',),
 #     },
