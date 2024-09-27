@@ -43,9 +43,6 @@ class MonitoredAPI(models.Model):
 
     lastModifiedBy = models.EmailField(null = False, blank = True)
 
-    # API Monitor Duration (in Days)
-    apiMonitorDuration = models.IntegerField(default = 5, null = True, blank = True)
-
     def __str__(self):
         return f"{self.apiName} ({self.apiType})"
 

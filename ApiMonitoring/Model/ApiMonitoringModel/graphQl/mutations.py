@@ -24,7 +24,6 @@ class MonitoredApiInput(graphene.InputObjectType):
     recipientDl = graphene.String()
     createdBy = graphene.String()
     lastModifiedBy = graphene.String()
-    apiMonitorduration  = graphene.Int()
 
 
 # Monitor a new Api
@@ -96,8 +95,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 graphqlApiconfig = graphQlApiConfig,
                 recipientDl = input.recipientDl,
                 createdBy = input.createdBy,
-                lastModifiedBy = input.createdBy,
-                apiMonitorduration = input.apiMonitorDuration
+                lastModifiedBy = input.createdBy
                 
                 )
 
