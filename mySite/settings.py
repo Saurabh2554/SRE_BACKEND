@@ -34,7 +34,8 @@ INSTALLED_APPS = [
     'graphene_django',
     'Business',
     "corsheaders",
-    "django_celery_results"
+    "django_celery_results",
+    "django_celery_beat",
     
 
 ]
@@ -105,6 +106,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -149,12 +151,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Celery Configuration Options
-CELERY_TIMEZONE = 'UTC'
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
+# CELERY_TIMEZONE = 'UTC'
+# CELERY_TASK_TRACK_STARTED = True
+# CELERY_TASK_TIME_LIMIT = 30 * 60
 
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'django-cache'
+# CELERY_RESULT_BACKEND = 'django-db'
+# CELERY_CACHE_BACKEND = 'django-cache'
 
 # CELERY_BROKER_URL = 'amqp://sfuser:%23InfoSF010@rmqwrapper.data-axle.com:5671/dig'  # Change according to your RabbitMQ setup
 # # CELERY_RESULT_BACKEND = 'rpc://'  # This is optional based on your needs

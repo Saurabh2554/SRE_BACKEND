@@ -32,7 +32,7 @@ class MonitoredAPI(models.Model):
     graphqlApiconfig = models.ForeignKey(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
 
     # Tracking the monitoring status
-    isApiActive = models.BooleanField(default=True)  # Status if API is being monitored or not
+    isApiActive = models.BooleanField(default=False)  # Status if API is being monitored or not
 
     # Timestamps
     createdAt = models.DateTimeField(default=timezone.now)
@@ -40,6 +40,8 @@ class MonitoredAPI(models.Model):
     # owner
     recipientDl = models.EmailField(null = False , blank = False)
     createdBy = models.EmailField(null = False , blank = True)
+
+    lastModifiedBy = models.EmailField(null = False, blank = True)
 
     # API Monitor Duration (in Days)
     apiMonitorDuration = models.IntegerField(default = 5, null = True, blank = True)

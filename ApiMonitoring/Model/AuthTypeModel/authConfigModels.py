@@ -14,7 +14,7 @@ class Authentication(models.Model):
     # Fields for different types of authentication
     api_key = models.CharField(max_length=255, null=True, blank=True)  # API Key (for API Key Auth)
     basic_username = models.CharField(max_length=255, null=True, blank=True)  # Username (for Basic Auth)
-    basic_password = models.CharField(max_length=255, null=True, blank=True)  # Password (for Basic Auth)
+    basic_password = models.CharField(max_length=254, null=True, blank=True)  # Password (for Basic Auth)
     bearer_token = models.TextField(null=True, blank=True)  # OAuth Bearer Token (for Bearer Token Auth)
     custom_auth_headers = models.JSONField(null=True, blank=True)  # Custom auth headers (for custom methods)
 
