@@ -65,7 +65,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                     else: 
                         raise GraphQLError("Same service already being monitored")
                         
-                if input.headers is not NONE:
+                if input.headers is not None:
                     for key , value in enumerate(input.headers, start=1):
                         headers['key'] = value
 
@@ -112,7 +112,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 class ApiMonitorUpdateMutation(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)  
-        input = MonitoredApiInput(required=True)
+        input = MonitoredApiInput(required=False) 
 
     monitoredApi = graphene.Field(MoniterApiType)
     success = graphene.Boolean()
@@ -130,7 +130,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             # need to add lastmodified by 
             
             
-            if input.headers is not NONE:
+            if input.headers is not None:
                     for key , value in enumerate(input.headers, start=1):
                         headers['key'] = value
                     monitoredApi.headers = headers
