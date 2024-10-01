@@ -39,8 +39,9 @@ class MonitoredAPI(models.Model):
     
     # owner
     recipientDl = models.EmailField(null = False , blank = False)
-    createdBy = models.EmailField(null = False , blank = True)
+    createdBy = models.EmailField(null = True , blank = True)
 
+    lastModifiedBy = models.EmailField(null = True, blank = True)
 
     def __str__(self):
         return f"{self.apiName} ({self.apiType})"
