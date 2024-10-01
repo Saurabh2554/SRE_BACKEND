@@ -18,7 +18,6 @@ class MonitoredApiInput(graphene.InputObjectType):
     apiUrl = graphene.String()  
     apiCallInterval = graphene.Int()  
     expectedResponseTime = graphene.Int()  
-    expectedStatusCode = graphene.Int()
     headers = graphene.JSONString() 
     graphqlQuery = graphene.String()
     recipientDl = graphene.String()
@@ -51,9 +50,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 
                 businessUnit = BusinessUnit.objects.get(pk = input.businessUnit)
                 subBusinessUnit = SubBusinessUnit.objects.get(pk = input.subBusinessUnit)
-                
-
-                # print(businessUnit,subBusinessUnit,"gggggggggggggggggg")
+            
                 
                 if existingMonitorAPIs is not None:
                     if not existingMonitorAPIs.isApiActive:
@@ -76,7 +73,6 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 if input.apiType == 'REST':
                     restApiConfig = RestAPIConfig.objects.create(
                         method = input.apiType,
-                        expected_status_code = input.expectedStatusCode
                     )
 
                 if input.apiType == 'GraphQL':

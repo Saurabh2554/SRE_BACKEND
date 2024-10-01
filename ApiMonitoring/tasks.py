@@ -18,10 +18,9 @@ def monitorApi(apiUrl, apiType, headers, id):
         result = hit_api(apiUrl, apiType, headers)
         monitoredApi = MonitoredAPI.objects.get(pk = id)
 
-        
         # To check the validation for  isAPIActive
-        current_date = datetime.now(monitoredApi.createdAt.tzinfo)
-        api_duration = current_date - monitoredApi.createdAt
+        # current_date = datetime.now(monitoredApi.createdAt.tzinfo)
+        # api_duration = current_date - monitoredApi.createdAt
 
         # if api_duration.days > monitoredApi.apiMonitorDuration:
         #     monitoredApi.isApiActive = False
@@ -38,7 +37,10 @@ def monitorApi(apiUrl, apiType, headers, id):
                 responseTime = result['response_time'],
                 success = result['success'],
                 statusCode = result['status'],
-                errorMessage = result['error_message']
+                errorMessage = result['error_message'],
+                requestStartTime = result['start_time'],
+                firstByteTime = result['end_time'],
+                responseSize = result['response_size']
             )
             return "Monitored"
         else:
