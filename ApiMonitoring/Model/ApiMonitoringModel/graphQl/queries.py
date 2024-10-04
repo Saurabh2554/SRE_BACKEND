@@ -194,7 +194,7 @@ class Query(graphene.ObjectType):
             monitoredApiResponse = None 
 
             if apiMonitoringId:
-              monitoredApiResponse = queryset.filter(id=apiMonitoringId)
+              monitoredApiResponse = MonitoredAPI.filter(id=apiMonitoringId)
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = ApiMonitorModel.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
             else:
