@@ -32,9 +32,9 @@ def ExtractBusinessAndSubBusinessUnit(self, businessUnitId, subBusinessUnitId):
         return businessUnit, subBusinessUnit
 
     except BusinessUnit.DoesNotExist as be:
-        raise GraphQLError(f"{e}")
+        raise GraphQLError(f"{be}")
     except SubBusinessUnit.DoesNotExist as sbe:
-        raise GraphQLError(f"{e}")        
+        raise GraphQLError(f"{sbe}")        
     except Exception as ex:
         raise GraphQLError(f"{ex}")
 
