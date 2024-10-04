@@ -39,9 +39,9 @@ def ExtractBusinessAndSubBusinessUnit(self, businessUnitId, subBusinessUnitId):
     except Exception as ex:
         raise GraphQLError(f"{ex}")
 
-def CheckExistingApi(self, apiObject):
+def CheckExistingApi(self, input):
   try:
-    return apiObject.objects.filter(
+    return MonitoredAPI.objects.filter(
         apiUrl__iexact=f'{input.apiUrl}',
         apiType=input.apiType
         ).first()
@@ -99,7 +99,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
              try:
                 headers = {}
                 
-                existingMonitorAPIs = CheckExistingApi(MonitoredAPI)  
+                existingMonitorAPIs = CheckExistingApi(input)  
                 businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
             
                 if existingMonitorAPIs.exists():
