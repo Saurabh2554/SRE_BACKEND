@@ -20,7 +20,7 @@ def handle_response(response, start_time, end_time):
     }
     response_time = response.elapsed.total_seconds()
     message = None
-
+    
     if response.status_code in error_messages:
         message = error_messages[response.status_code]
 
@@ -31,7 +31,7 @@ def handle_response(response, start_time, end_time):
             'success':False if message else True,
             'start_time': start_time,
             'end_time':end_time,
-            'response_size' : response.headers['Content_Length'],
+            'response_size' : len(response.content),
             }
 
 def hit_api(api_url, api_type='REST', headers=None, payload=None):
@@ -55,7 +55,7 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         
         response.raise_for_status()
 
-        print(f"response.payload is {response.json()}")
+        print(f"response.header is { len(response.content)}")
         return handle_response(response, start_time, end_time)
 
     except requests.exceptions.HTTPError as err_msg:
