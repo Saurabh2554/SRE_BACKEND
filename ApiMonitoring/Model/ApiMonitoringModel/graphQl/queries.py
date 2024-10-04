@@ -78,7 +78,7 @@ class ApiMetricesType(DjangoObjectType):
     error_count = graphene.Int()
     avg_response_size = graphene.Float()
     avg_first_byte_time = graphene.Float()
-    response_time = graphene.List(graphene.Float())  
+    response_time = graphene.List(graphene.Float)  
 
 
     def resolve_metrics(self, info):
@@ -127,19 +127,6 @@ class validateApiResponse(graphene.ObjectType):
     status = graphene.Int() 
     success = graphene.Boolean()
 
-class apiMetricesResponse(graphene.ObjectType):
-      availability_uptime = graphene.Float()
-      success_rates = graphene.Float()
-      error_rates = graphene.Float()
-      throughput = graphene.Float()
-      avg_latency =graphene.Float() 
-      downtime = graphene.Float()
-      success_count = graphene.Int()
-      error_count = graphene.Int()
-      avg_response_size = graphene.Float()
-      avg_first_byte_time = graphene.Float()
-
-
 class Query(graphene.ObjectType):
     api_type_choices = graphene.List(apiTypeChoice)
 
@@ -152,7 +139,7 @@ class Query(graphene.ObjectType):
     )
 
     get_all_metrices = graphene.List(
-        apiMetricesResponse, 
+        ApiMetricesType, 
         businessUnit = graphene.UUID(required = True), 
         subBusinessUnit = graphene.UUID(required = True),
         apiMonitoringId = graphene.UUID(), 
