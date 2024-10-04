@@ -55,7 +55,6 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         
         response.raise_for_status()
 
-        print(f"response.header is { len(response.content)}")
         return handle_response(response, start_time, end_time)
 
     except requests.exceptions.HTTPError as err_msg:

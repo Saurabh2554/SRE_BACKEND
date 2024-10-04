@@ -140,8 +140,8 @@ class Query(graphene.ObjectType):
 
     get_all_metrices = graphene.List(
         ApiMetricesType, 
-        businessUnit = graphene.UUID(required = True), 
-        subBusinessUnit = graphene.UUID(required = True),
+        businessUnit = graphene.UUID(), 
+        subBusinessUnit = graphene.UUID(),
         apiMonitoringId = graphene.UUID(), 
         from_date = graphene.DateTime(), 
         to_date = graphene.DateTime(),
@@ -176,7 +176,7 @@ class Query(graphene.ObjectType):
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
         
-    def resolve_get_all_metrices(self, info, businessUnit, subBusinessUnit, apiMonitoringId = None, from_date = None, to_date= None):
+    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None):
         try:
             monitoredApiResponse = None 
 
@@ -185,7 +185,7 @@ class Query(graphene.ObjectType):
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = ApiMonitorModel.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
             else:
-                raise GraphQLError("You must provide either apiMonitoringId or both businessUnit and subBusinessUnit.")
+                raise GraphQLError("Please provide either the apiMonitoringId or both businessUnit and subBusinessUnit.")
 
             if from_date and to_date:
               monitoredApiResponse = monitoredApiResponse.filter(APIMetrics__timestamp__range=(from_date, to_date))

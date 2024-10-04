@@ -1,8 +1,6 @@
 import logging
 from celery import shared_task
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
-# from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIMetrics
-# from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
 from graphql import GraphQLError
