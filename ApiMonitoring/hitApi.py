@@ -5,7 +5,6 @@ class APIError(Exception):
     pass
 
 def handle_response(response, start_time, end_time):
-    # print(f"reason is {response.reason}")
     error_messages = {
         400: "Bad Request: The server could not understand the request.",
         401: "Unauthorized: Authentication is required.",
