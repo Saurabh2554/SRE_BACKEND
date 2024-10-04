@@ -51,7 +51,7 @@ def calculateMetrices(apiMetrices, query_name):
             'error_rates' :  round((total_failed_requests/total_no_of_requests)*100, 2),
             'throughput' : round((total_no_of_requests/ (time_difference/ 60.0)), 3),  # request per min
             'avg_latency' : round(sum(latency_per_metrices)/len(latency_per_metrices), 2) if len(latency_per_metrices)>0 else 0 ,
-            'downtime' : round(time_difference * ((100 - availability_uptime)/100), 2) if availability_uptime<100 else 0,
+            'downtime' : round(time_difference * ((100 - round((total_uptime_requests / total_no_of_requests)*100, 2))/100), 2) if availability_uptime<100 else 0,
             'success_count' :   total_successful_requests,
             'error_count' : total_failed_requests,
             'avg_response_size' : round(sum(response_size_per_metrices)/len(response_size_per_metrices) , 2) if len (response_size_per_metrices) >0 else 0,
