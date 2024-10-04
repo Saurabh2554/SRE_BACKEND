@@ -1,6 +1,7 @@
 import requests
 from operator import attrgetter
 from types import SimpleNamespace
+import time
 class APIError(Exception):
     pass
 
