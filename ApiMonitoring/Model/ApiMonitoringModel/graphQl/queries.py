@@ -4,6 +4,7 @@ from  ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from ApiMonitoring.hitApi import hit_api
 from graphql import GraphQLError
 import json
+from graphene_django import DjangoObjectType
 
 
 def calculateMetrices(apiMetrices, query_name):
@@ -18,10 +19,10 @@ def calculateMetrices(apiMetrices, query_name):
           total_uptime_requests = apiMetrices.filter(statusCode_gte =200, statusCode_lt= 400).count()
 
 
-        if query =='success_count' or query == 'success_rates':
+        if query_name =='success_count' or query_name == 'success_rates':
           total_successful_requests = apiMetrices.filter(statusCode=200).count()
 
-        if query =='error_count' or query == 'error_rates':
+        if query_name =='error_count' or query_name == 'error_rates':
           total_failed_requests = apiMetrices.filter(statusCode_gte =400, statusCode_lt= 600).count()
         
 
@@ -64,7 +65,7 @@ def calculateMetrices(apiMetrices, query_name):
 
 class ApiMetricesType(DjangoObjectType):
     class Meta:
-        model = ApiMonitorModel
+        model = MonitoredAPI
         fields = ('id', 'apiName','apiType', 'apiUrl','expectedResponseTime')
 
     availability_uptime = graphene.Float()
@@ -77,11 +78,11 @@ class ApiMetricesType(DjangoObjectType):
     error_count = graphene.Int()
     avg_response_size = graphene.Float()
     avg_first_byte_time = graphene.Float()
-    response_time = graphene.List(graphene.Float)  
+    response_time = graphene.List(graphene.Float())  
 
 
     def resolve_metrics(self, info):
-        metrics = calculateMetrices(ApiMetrices.objects.filter(api=self), info.field_name)
+        metrics = calculateMetrices(APIMetrics.objects.filter(api=self), info.field_name)
         return metrics
 
     def resolve_availability_uptime(self, info):
@@ -160,11 +161,10 @@ class Query(graphene.ObjectType):
         )
     
 
-
     def resolve_api_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.API_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
-        
+     
 
     def resolve_validate_api(self, info, apiUrl, apiType, query=None, headers=None):
         try:

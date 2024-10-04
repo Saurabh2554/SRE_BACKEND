@@ -7,6 +7,7 @@ from  Business.models import BusinessUnit , SubBusinessUnit
 from  ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from  graphql import GraphQLError
 from  ApiMonitoring.tasks import monitorApi
+from graphene_django import DjangoObjectType
 
 
 #Monitored  Api input values
