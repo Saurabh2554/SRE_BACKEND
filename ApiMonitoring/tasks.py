@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 
-@shared_task
+# @shared_task
 def monitorApi(apiUrl, apiType, headers, id):
     try:    
         result = hit_api(apiUrl, apiType, headers)
