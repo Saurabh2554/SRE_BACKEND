@@ -8,7 +8,7 @@ from  Business.models import BusinessUnit , SubBusinessUnit
 from  graphql import GraphQLError
 from  ApiMonitoring.tasks import monitorApi
 from .types import MonitoredApiInput
-
+import json
 
 def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
     try:
@@ -83,9 +83,6 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
             def mutate(self, info, input):
              try:
-                headers = {}
-                # print(input)
-                # existingMonitorAPIs = CheckExistingApi(input = input)  
                 businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
             
                 # if existingMonitorAPIs.exists():
@@ -94,17 +91,13 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 #     else: 
                 #         raise GraphQLError("Same service already being monitored")
                         
-                if input.headers:
-                    for key , value in enumerate(input.headers, start=1):
-                        headers[f'{key}'] = value
-
                 apiConfig = CreateConfiguration(input) 
 
-                monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, headers, apiConfig, input)
+                monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
 
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
-                response = monitorApi(input.apiUrl, input.apiType, headers, newMonitoredApi.id)
+                response = monitorApi(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
 
                 return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
@@ -125,7 +118,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
         try:
             # Fetch the existing MonitoredAPI by its ID
             monitoredApi = MonitoredAPI.objects.get(id=id)
-            headers = {}
+            headers = None
             message = None
         
             monitoredApi.apiCallInterval = input.apiCallInterval if input.apiCallInterval else monitoredApi.apiCallInterval
@@ -134,18 +127,13 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             monitoredApi.isApiActive = isApiActive
             # need to add lastmodified by 
             
-            
-            if input.headers is not None:
-                    for key , value in enumerate(input.headers, start=1):
-                        headers['key'] = value
-                    monitoredApi.headers = headers
-
-            
+            monitoredApi.headers = input.headers
+  
             monitoredApi.save()
 
             
             if monitoredApi.isApiActive:
-                response = monitoredApi.delay(monitoredApi.apiUrl, monitoredApi.apiType, headers, monitoredApi.id)
+                response = monitoredApi.delay(monitoredApi.apiUrl, monitoredApi.apiType, input.headers, monitoredApi.id)
 
                 # need to check response is Monitored then we need to add this return statement 
                 # Return a success message                

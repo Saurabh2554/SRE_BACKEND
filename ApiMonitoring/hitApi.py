@@ -3,6 +3,7 @@ from operator import attrgetter
 from types import SimpleNamespace
 from django.utils import timezone
 from  graphql import GraphQLError
+import json
 class APIError(Exception):
     pass
 
@@ -41,6 +42,7 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         response = None
         requestStartTime = None
         firstByteTime = None
+        headers = {header["key"]: header["value"] for header in headers if header["key"] and header["value"]}
 
         if api_type.upper() == 'REST':
             start_time = timezone.now()
@@ -49,7 +51,7 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
 
         elif api_type.upper() == 'GRAPHQL':
             start_time = timezone.now()
-            response = requests.post(api_url, json=payload, headers = headers)
+            response = requests.post(api_url, json=payload, headers = headers_dict)
             end_time = timezone.now()
      
         else:
@@ -64,5 +66,4 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         # raise APIError(f"{attrgetter('status', 'error_message','success')(SimpleNamespace(**handle_response(response)))}")
          raise GraphQLError("Some error occurred new")
     except requests.exceptions.RequestException as req_error:
-        print("in exception hit_api req_error")
         raise GraphQLError(f"Request failed: {req_error}")

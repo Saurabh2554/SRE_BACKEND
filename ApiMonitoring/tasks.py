@@ -46,6 +46,7 @@ def monitorApi(apiUrl, apiType, headers, id):
             pass
 
     except Exception as ex:
+        print("inside the exception")
         raise GraphQLError(
             f"{ex}"
         )

@@ -36,7 +36,7 @@ class Query(graphene.ObjectType):
             result = None
             if apiType == 'REST':
 
-                headers_dict = json.loads(headers) if headers else {}
+                headers_dict = headers if headers else {}
                 result =  hit_api(apiUrl, apiType, headers_dict) 
 
             elif apiType == 'GraphQL' :
