@@ -102,7 +102,7 @@ def calculateMetrices(apiMetrices, query_name):
         }
  
     except GraphQLError as gql_error:
-        raise gql_error
+        raise GraphQLError(gql_error)
     except Exception as e:
         raise GraphQLError(f"An error occurred while calculating metrics: {str(e)}")
 

@@ -2,6 +2,7 @@ import requests
 from operator import attrgetter
 from types import SimpleNamespace
 from django.utils import timezone
+from  graphql import GraphQLError
 class APIError(Exception):
     pass
 
