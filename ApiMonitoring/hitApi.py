@@ -62,7 +62,7 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
 
     except requests.exceptions.HTTPError as err_msg:
         # raise APIError(f"{attrgetter('status', 'error_message','success')(SimpleNamespace(**handle_response(response)))}")
-         raise GraphQlError("Some error occurred new")
+         raise GraphQLError("Some error occurred new")
     except requests.exceptions.RequestException as req_error:
         print("in exception hit_api req_error")
-        raise GraphQlError(f"Request failed: {req_error}")
+        raise GraphQLError(f"Request failed: {req_error}")
