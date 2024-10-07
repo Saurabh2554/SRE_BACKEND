@@ -1,7 +1,7 @@
 import graphene
 from graphene_django import DjangoObjectType
 from  ..apiMonitorModels import MonitoredAPI 
-from .helpers import calculateMetrices
+from .helpers import calculateMetrices, resolve_metrics
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics 
 
 class MoniterApiType(DjangoObjectType):
@@ -14,8 +14,8 @@ class apiTypeChoice(graphene.ObjectType):
     value = graphene.String()
 
 class percentileResponseType(graphene.ObjectType):
-   key = graphene.String()
-   value = graphene.Float()
+   curr_percentile_res_time = graphene.Float()
+   percentage_diff = graphene.Float()
 
 class validateApiResponse(graphene.ObjectType):
     status = graphene.Int() 
@@ -26,67 +26,63 @@ class ApiMetricesType(DjangoObjectType):
         model = MonitoredAPI
         fields = ('id', 'apiName','apiType', 'apiUrl','expectedResponseTime')
 
-    availability_uptime = graphene.Float()
-    success_rates = graphene.Float()
-    error_rates = graphene.Float()
-    throughput = graphene.Float()
-    avg_latency =graphene.Float() 
-    downtime = graphene.Float()
-    success_count = graphene.Int()
-    error_count = graphene.Int()
-    avg_response_size = graphene.Float()
-    avg_first_byte_time = graphene.Float()
-    response_time = graphene.List(graphene.Float)
-    percentile_50 = graphene.Field(percentileResponseType)  
-    percentile_90 = graphene.Field(percentileResponseType)  
-    percentile_99 = graphene.Field(percentileResponseType)  
-
-
-    def resolve_metrics(self, info):
-        metrics = calculateMetrices(APIMetrics.objects.filter(api=self).order_by('timestamp'), info.field_name)
-        return metrics
+    availability_uptime = graphene.Float(name='availability_uptime')
+    success_rates = graphene.Float(name='success_rates')
+    error_rates = graphene.Float(name='error_rates')
+    throughput = graphene.Float(name='throughput')
+    avg_latency = graphene.Float(name='avg_latency') 
+    downtime = graphene.Float(name='downtime')
+    success_count = graphene.Int(name='success_count')
+    error_count = graphene.Int(name='error_count')
+    avg_response_size = graphene.Float(name='avg_response_size')
+    avg_first_byte_time = graphene.Float(name='avg_first_byte_time')
+    response_time = graphene.List(graphene.Float, name='response_time')
+    percentile_50 = graphene.Field(percentileResponseType, name='percentile_50')  
+    percentile_90 = graphene.Field(percentileResponseType, name='percentile_90')  
+    percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')    
+    
 
     def resolve_availability_uptime(self, info):
-        return self.resolve_metrics(info)['availability_uptime']
+        return resolve_metrics(self,info)['availability_uptime']
 
     def resolve_success_rates(self, info):
-        return self.resolve_metrics(info)['success_rates']
+        return resolve_metrics(self,info)['success_rates']
 
     def resolve_error_rates(self, info):
-        return self.resolve_metrics(info)['error_rates']    
+        return resolve_metrics(self,info)['error_rates']    
 
     def resolve_throughput(self, info):
-        return self.resolve_metrics(info)['throughput']
+        return resolve_metrics(self,info)['throughput']
     
     def resolve_avg_latency(self, info):
-        return self.resolve_metrics(info)['avg_latency']
+        return resolve_metrics(self,info)['avg_latency']
 
     def resolve_downtime(self, info):
-        return self.resolve_metrics(info)['downtime']
+        return resolve_metrics(self,info)['downtime']
 
     def resolve_success_count(self, info):
-        return self.resolve_metrics(info)['success_count']   
+        return resolve_metrics(self,info)['success_count']   
 
     def resolve_error_count(self, info):
-        return self.resolve_metrics(info)['error_count']   
+        return resolve_metrics(self,info)['error_count']   
 
     def resolve_avg_response_size(self, info):
-        return self.resolve_metrics(info)['avg_response_size'] 
+        return resolve_metrics(self,info)['avg_response_size'] 
 
     def resolve_avg_first_byte_time(self, info):
-        return self.resolve_metrics(info)['avg_first_byte_time'] 
+        return resolve_metrics(self,info)['avg_first_byte_time'] 
 
     def resolve_response_time(self, info):
-        return self.resolve_metrics(info)['response_time']   
+        return resolve_metrics(self,info)['response_time']   
 
     def resolve_percentile_50(self, info):
-        return self.resolve_metrics(info)['percentile_50']   
+        return resolve_metrics(self,info)['percentile_50']   
     
     def resolve_percentile_90(self, info):
-        return self.resolve_metrics(info)['percentile_90']  
+        return resolve_metrics(self,info)['percentile_90']  
     
     def resolve_percentile_99(self, info):
-        return self.resolve_metrics(info)['percentile_99']  
+        return resolve_metrics(self,info)['percentile_99']  
 
 #Monitored  Api input values
 class MonitoredApiInput(graphene.InputObjectType):

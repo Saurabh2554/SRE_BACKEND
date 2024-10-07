@@ -15,7 +15,7 @@ def monitorApi(apiUrl, apiType, headers, id):
     try:    
         result = hit_api(apiUrl, apiType, headers)
         monitoredApi = MonitoredAPI.objects.get(pk = id)
-
+       
         # To check the validation for  isAPIActive
         # current_date = datetime.now(monitoredApi.createdAt.tzinfo)
         # api_duration = current_date - monitoredApi.createdAt
@@ -40,6 +40,7 @@ def monitorApi(apiUrl, apiType, headers, id):
                 firstByteTime = result['end_time'],
                 responseSize = result['response_size']
             )
+            
             return "Monitored"
         else:
             pass
@@ -56,10 +57,10 @@ def monitorApi(apiUrl, apiType, headers, id):
 
     
 
-@shared_task
-def mul(x, y):
-    return x * y
+# @shared_task
+# def mul(x, y):
+#     return x * y
 
-@shared_task
-def xsum(numbers):
-    return sum(numbers)
+# @shared_task
+# def xsum(numbers):
+#     return sum(numbers)

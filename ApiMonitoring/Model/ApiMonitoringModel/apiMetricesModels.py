@@ -19,4 +19,4 @@ class APIMetrics(models.Model):
     responseSize = models.IntegerField(default = 233)
     
     def __str__(self):
-        return f"Metrics for {self.api.name}"
+        return f"Metrics for {self.responseTime}"

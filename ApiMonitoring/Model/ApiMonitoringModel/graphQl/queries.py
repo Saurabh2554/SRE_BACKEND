@@ -59,7 +59,7 @@ class Query(graphene.ObjectType):
             monitoredApiResponse = None 
 
             if apiMonitoringId:
-              monitoredApiResponse = MonitoredAPI.filter(id=apiMonitoringId)
+              monitoredApiResponse = MonitoredAPI.objects.filter(id=apiMonitoringId)
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = MonitoredAPI.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
             else:
@@ -69,7 +69,7 @@ class Query(graphene.ObjectType):
               monitoredApiResponse = monitoredApiResponse.filter(APIMetrics__timestamp__range=(from_date, to_date))
 
             if monitoredApiResponse.exists():
-                return monitoredApiResponse  
+                return monitoredApiResponse
             else:
                 raise GraphQLError("No any api is set to monitored ever")  
 
