@@ -1,7 +1,7 @@
 import graphene
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
-from .types import apiTypeChoice, ApiMetricesType, validateApiResponse
+from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
 from graphql import GraphQLError
 import json
 
@@ -25,6 +25,10 @@ class Query(graphene.ObjectType):
         to_date = graphene.DateTime(),
         )
     
+    get_service_by_id = graphene.Field(
+       MoniterApiType,
+       serviceId = graphene.UUID(required=True)
+    )
 
     def resolve_api_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.API_TYPE_CHOICES
@@ -74,7 +78,19 @@ class Query(graphene.ObjectType):
                 raise GraphQLError("No any api is set to monitored ever")  
 
         except Exception as e:
-          raise GraphQLError(f"{str(e)}")    
+          raise GraphQLError(f"{str(e)}")  
+
+    def resolve_get_service_by_id(self,info,serviceId):
+       try:
+          monitoredApi = MonitoredAPI.objects.get(pk=serviceId)
+          return monitoredApi
+       except MonitoredAPI.DoesNotExist:
+            raise GraphQLError("Service Not Found!")
+       except Exception as e:
+          raise GraphQLError(f"{str(e)}")  
+          
+       
+         
 
 
 
