@@ -41,7 +41,7 @@ class MonitoredAPI(models.Model):
     recipientDl = models.EmailField(null = False , blank = False)
     createdBy = models.EmailField(null = True , blank = True)
 
-    # lastModifiedBy = models.EmailField(null = True, blank = True)
+    taskId = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"{self.apiName} ({self.apiType})"

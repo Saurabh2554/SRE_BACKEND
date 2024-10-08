@@ -24,7 +24,7 @@ class validateApiResponse(graphene.ObjectType):
 class ApiMetricesType(DjangoObjectType):
     class Meta:
         model = MonitoredAPI
-        fields = ('id', 'apiName','apiType', 'apiUrl','expectedResponseTime')
+        fields = ('id', 'apiName','apiType', 'apiUrl','expectedResponseTime','isApiActive')
 
     availability_uptime = graphene.Float(name='availability_uptime')
     success_rates = graphene.Float(name='success_rates')

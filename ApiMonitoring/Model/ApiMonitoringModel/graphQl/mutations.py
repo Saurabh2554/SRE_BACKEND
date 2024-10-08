@@ -6,7 +6,7 @@ from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAP
 from  Business.models import BusinessUnit , SubBusinessUnit
 # from  ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from  graphql import GraphQLError
-from  ApiMonitoring.tasks import monitorApi
+from  ApiMonitoring.tasks import monitorApi, revokeTask
 from .types import MonitoredApiInput
 import json
 
@@ -84,12 +84,13 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             def mutate(self, info, input):
              try:
                 businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
-            
-                # if existingMonitorAPIs.exists():
-                #     if not existingMonitorAPIs.isApiActive:
-                #         return ApiMonitorUpdateMutation().mutate(info, id=existingMonitorAPIs.id, isApiActive=True, input=input)
-                #     else: 
-                #         raise GraphQLError("Same service already being monitored")
+
+                existingMonitorAPIs = CheckExistingApi(input = input)
+                if existingMonitorAPIs is not None :
+                    if not existingMonitorAPIs.isApiActive:
+                        return ApiMonitorUpdateMutation().mutate(info, id=existingMonitorAPIs.id, isApiActive=True, input=input)
+                    else: 
+                        raise GraphQLError("Same service already being monitored")
                         
                 apiConfig = CreateConfiguration(input) 
 
@@ -107,45 +108,40 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 class ApiMonitorUpdateMutation(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)  
-        isApiActive = graphene.UUID(required=True)
-        input = MonitoredApiInput(required=False) 
+        isApiActive = graphene.Boolean(required=True)
+        input = MonitoredApiInput() 
 
     monitoredApi = graphene.Field(MoniterApiType)
     success = graphene.Boolean()
     message = graphene.String()
 
-    def mutate(self, info, id, isApiActive, input):
+    def mutate(self, info, id, isApiActive, input = None):
         try:
             # Fetch the existing MonitoredAPI by its ID
-            monitoredApi = MonitoredAPI.objects.get(id=id)
-            headers = None
+            monitoredApi = MonitoredAPI.objects.get(pk=id)
             message = None
         
-            monitoredApi.apiCallInterval = input.apiCallInterval if input.apiCallInterval else monitoredApi.apiCallInterval
-            monitoredApi.expectedResponseTime = input.expectedResponseTime if input.expectedResponseTime else monitoredApi.expectedResponseTime
-           
+            monitoredApi.apiCallInterval = input.apiCallInterval if input and input.apiCallInterval else monitoredApi.apiCallInterval
+            monitoredApi.expectedResponseTime = input.expectedResponseTime if input and input.expectedResponseTime else monitoredApi.expectedResponseTime
+            monitoredApi.headers = input.headers if input and input.headers else monitoredApi.headers
+
             monitoredApi.isApiActive = isApiActive
-            # need to add lastmodified by 
-            
-            monitoredApi.headers = input.headers
-  
-            monitoredApi.save()
-
-            
-            if monitoredApi.isApiActive:
-                response = monitoredApi.delay(monitoredApi.apiUrl, monitoredApi.apiType, input.headers, monitoredApi.id)
-
-                # need to check response is Monitored then we need to add this return statement 
-                # Return a success message                
+         
+            if isApiActive:
+                response = monitorApi(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)      
+                print(response)         
                 message = "API monitoring details updated successfully and API monitoring started"
+            else:
+                response = revokeTask(monitoredApi.taskId)
+                monitoredApi.taskId = None
+                message = "Service Deactivated!"
 
-            
-
+            monitoredApi.save()
 
             return ApiMonitorUpdateMutation(
                 monitoredApi=monitoredApi,
                 success=True,
-                message= message if message is not None else "API monitoring details updated successfully"
+                message= message 
             )
 
         except MonitoredAPI.DoesNotExist:
