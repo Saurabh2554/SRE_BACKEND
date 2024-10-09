@@ -95,5 +95,5 @@ class MonitoredApiInput(graphene.InputObjectType):
     expectedResponseTime = graphene.Int()  
     headers = graphene.JSONString() 
     graphqlQuery = graphene.String()
-    recipientDl = graphene.String()
+    recipientDl = graphene.String(required = True)
     createdBy = graphene.String()

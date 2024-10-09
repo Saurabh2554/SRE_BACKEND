@@ -61,16 +61,25 @@ class Query(graphene.ObjectType):
     def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None):
         try:
             monitoredApiResponse = None 
+            info.context.from_date = from_date
+            info.context.to_date = to_date
 
-            if apiMonitoringId:
+            if apiMonitoringId:  
               monitoredApiResponse = MonitoredAPI.objects.filter(id=apiMonitoringId)
+              info.context.from_date = from_date
+              info.context.to_date = to_date
+
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = MonitoredAPI.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
             else:
                 raise GraphQLError("Please provide either the apiMonitoringId or both businessUnit and subBusinessUnit.")
+            
 
-            if from_date and to_date:
-              monitoredApiResponse = monitoredApiResponse.filter(APIMetrics__timestamp__range=(from_date, to_date))
+            if from_date: 
+                monitoredApiResponse = monitoredApiResponse.filter(createdAt__gte=from_date)
+            if to_date:
+                monitoredApiResponse = monitoredApiResponse.filter(createdAt__lte = to_date)   
+              
 
             if monitoredApiResponse.exists():
                 return monitoredApiResponse

@@ -63,14 +63,12 @@ def calculateMetrices(apiMetrices, query_name):
         if query_name == 'avg_latency':
             latency_per_metrices = list(apiMetrices.values_list('firstByteTime', 'requestStartTime'))
             latency_per_metrices = [(latency - request_start) for latency, request_start in latency_per_metrices]
-            print(latency_per_metrices)
  
         if query_name == 'avg_response_size':
             response_size_per_metrices = list(apiMetrices.values_list('responseSize', flat=True))
  
         if query_name == 'avg_first_byte_time':
             first_byte_time = list(apiMetrices.values_list('firstByteTime', flat=True))
-            print(f"firstByteTime: {first_byte_time}")
  
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
             response_time = list(apiMetrices.values_list('responseTime', flat=True))
@@ -94,7 +92,7 @@ def calculateMetrices(apiMetrices, query_name):
             'success_count': total_successful_requests,
             'error_count': total_failed_requests,
             'avg_response_size': round(sum(response_size_per_metrices) / len(response_size_per_metrices), 2) if len(response_size_per_metrices)>0 else 0,
-            'avg_first_byte_time': round(sum(first_byte_time) / len(first_byte_time), 2) if len(first_byte_time)>0 else 0,
+            'avg_first_byte_time': round(sum(fbt.timestamp() for fbt in first_byte_time) / len(first_byte_time), 2) if len(first_byte_time)>0 else 0,
             'response_time': response_time,
             'percentile_50': {'curr_percentile_res_time': currentPercentile, 'percentage_diff': percentageDiff} if query_name == 'percentile_50' else None,
             'percentile_90': {'curr_percentile_res_time': currentPercentile, 'percentage_diff': percentageDiff} if query_name == 'percentile_90' else None,
@@ -102,11 +100,20 @@ def calculateMetrices(apiMetrices, query_name):
         }
  
     except GraphQLError as gql_error:
-        raise GraphQLError(gql_error)
+        raise gql_error
     except Exception as e:
-        raise GraphQLError(f"An error occurred while calculating metrics: {str(e)}")
+        raise GraphQLError(f"Unknown error occured!")
 
 
 def resolve_metrics(self, info):
-        metrics = calculateMetrices(APIMetrics.objects.filter(api=self).order_by('timestamp'), info.field_name)
+        filtered_metrices = APIMetrics.objects.filter(api=self)
+        from_date = info.context.from_date
+        to_date = info.context.to_date
+
+        if from_date:
+            filtered_metrices = filtered_metrices.filter(timestamp__gte = from_date)
+        if to_date:
+            filtered_metrices = filtered_metrices.filter(timestamp__lte = to_date)  
+
+        metrics = calculateMetrices(filtered_metrices.order_by('timestamp'), info.field_name)
         return metrics

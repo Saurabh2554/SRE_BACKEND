@@ -26,7 +26,6 @@ def handle_response(response, start_time, end_time):
     if response.status_code in error_messages:
         message = error_messages[response.status_code]
     
-    print("I am in resolver method")
     return {
             'status': response.status_code, 
             'response_time': response_time * 1000, 

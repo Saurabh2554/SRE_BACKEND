@@ -25,9 +25,7 @@ def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
         raise GraphQLError(f"{ex}")
 
 def CheckExistingApi(input):
-  print(input)
   try:
-    # print(input)
     return MonitoredAPI.objects.filter(
         apiUrl__iexact=f'{input.apiUrl}',
         apiType=input.apiType
@@ -128,8 +126,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             monitoredApi.isApiActive = isApiActive
          
             if isApiActive:
-                response = monitorApi(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)      
-                print(response)         
+                response = monitorApi(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)          
                 message = "API monitoring details updated successfully and API monitoring started"
             else:
                 response = revokeTask(monitoredApi.taskId)
