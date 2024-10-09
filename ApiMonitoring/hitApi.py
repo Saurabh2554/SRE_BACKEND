@@ -54,14 +54,13 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
      
         else:
             raise ValueError("Unsupported API type. Use 'REST' or 'GRAPHQL'.")
-        
-        
+    
         response.raise_for_status()
 
         return handle_response(response, start_time, end_time)
 
     except requests.exceptions.HTTPError as err_msg:
-         raise APIError(f"{attrgetter('status', 'error_message','success')(SimpleNamespace(**handle_response(response)))}")
+         raise APIError(f"retry...")
     
-    except requests.exceptions.RequestException as req_error:
-        raise APIError(f"{attrgetter('status', 'error_message','success')(SimpleNamespace(**handle_response(response)))}")
+    except Exception as EX:
+        raise GraphQLError("Some error occurred")

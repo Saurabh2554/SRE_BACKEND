@@ -7,7 +7,8 @@ from graphql import GraphQLError
 from celery import current_task
 from celery.result import AsyncResult
 from celery.worker.control import revoke
-import datetime
+from celery.exceptions import Retry
+from .hitApi import APIError
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,8 @@ def revokeTask(taskId):
         raise GraphQLError(f"{ex}")
         
 
-@shared_task
-def monitorApi(apiUrl, apiType, headers, id):
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def monitorApiTask(apiUrl, apiType, headers, id):
     try:    
         result = hit_api(apiUrl, apiType, headers)
         if result.success:
@@ -51,24 +52,20 @@ def monitorApi(apiUrl, apiType, headers, id):
             
             return "Monitored"
         else:
-            pass
+            raise Retry("API call was not successful, retrying...")
 
+    except (ApiError, Retry) as e:
+        self.retry()
     except Exception as ex:
         raise GraphQLError(
             f"{ex}"
-        )
+        )  
 
-        
-        
 
+@shared_task
+def periodicMonitoring():
+    try:
+        pass
+    except Exception as e:
+        pass    
     
-
-    
-
-# @shared_task
-# def mul(x, y):
-#     return x * y
-
-# @shared_task
-# def xsum(numbers):
-#     return sum(numbers)

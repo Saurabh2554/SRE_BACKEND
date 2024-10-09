@@ -96,7 +96,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
-                response = monitorApi(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
+                response = monitorApiTask(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
 
                 return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
@@ -126,7 +126,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             monitoredApi.isApiActive = isApiActive
          
             if isApiActive:
-                response = monitorApi(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)          
+                response = monitorApiTask(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)          
                 message = "API monitoring details updated successfully and API monitoring started"
             else:
                 response = revokeTask(monitoredApi.taskId)
