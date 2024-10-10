@@ -26,7 +26,6 @@ def revokeTask(taskId):
     except Exception as ex:
         raise GraphQLError(f"{ex}")
         
-
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def monitorApiTask(apiUrl, apiType, headers, id):
     try:    
@@ -61,11 +60,12 @@ def monitorApiTask(apiUrl, apiType, headers, id):
             f"{ex}"
         )  
 
-
 @shared_task
 def periodicMonitoring():
     try:
-        pass
+        active_monitors = MonitoredAPI.objects.filter(isApiActive=True)  # or any other filter
+        for monitor in active_monitors:
+          monitorApiTask.apply_async((monitor.api_url, monitor.api_type, monitor.headers, monitor.id))
     except Exception as e:
-        pass    
+        raise Exception("error scheduling tasks")    
     
