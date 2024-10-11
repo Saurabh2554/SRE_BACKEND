@@ -6,7 +6,7 @@ from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAP
 from  Business.models import BusinessUnit , SubBusinessUnit
 # from  ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from  graphql import GraphQLError
-from  ApiMonitoring.tasks import monitorApi, revokeTask
+from  ApiMonitoring.tasks import monitorApiTask, revokeTask
 from .types import MonitoredApiInput
 from mySite.celery import setScheduleTasks
 import json
@@ -97,7 +97,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
-                response = monitorApiTask(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
+                response = monitorApiTask.delay(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
                 setScheduleTasks(input.apiCallInterval)
                 return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
@@ -127,7 +127,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             monitoredApi.isApiActive = isApiActive
          
             if isApiActive:
-                response = monitorApiTask(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)  
+                response = monitorApiTask.delay(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)  
                 setScheduleTasks(monitoredApi.apiCallInterval)        
                 message = "API monitoring details updated successfully and API monitoring started"
             else:

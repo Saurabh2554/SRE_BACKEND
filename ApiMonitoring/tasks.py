@@ -27,13 +27,13 @@ def revokeTask(taskId):
         raise GraphQLError(f"{ex}")
         
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def monitorApiTask(apiUrl, apiType, headers, id):
+def monitorApiTask(self, apiUrl, apiType, headers, id):
     try:    
         result = hit_api(apiUrl, apiType, headers)
-        if result.success:
+        if result['success']:
             monitoredApi = MonitoredAPI.objects.get(pk = id)
         
-            if monitoredApi.exists():
+            if monitoredApi:
                 monitoredApi.isApiActive = True
                 monitoredApi.taskId = current_task.request.id # Store the celery task Id
                 monitoredApi.save()
@@ -53,7 +53,7 @@ def monitorApiTask(apiUrl, apiType, headers, id):
         else:
             raise Retry("API call was not successful, retrying...")
 
-    except (ApiError, Retry) as e:
+    except (APIError, Retry) as e:
         self.retry()
     except Exception as ex:
         raise GraphQLError(
@@ -61,8 +61,9 @@ def monitorApiTask(apiUrl, apiType, headers, id):
         )  
 
 @shared_task
-def periodicMonitoring():
+def periodicMonitoring(self):
     try:
+        print("Test monitor api")
         active_monitors = MonitoredAPI.objects.filter(isApiActive=True)  # or any other filter
         for monitor in active_monitors:
           monitorApiTask.apply_async((monitor.api_url, monitor.api_type, monitor.headers, monitor.id))
