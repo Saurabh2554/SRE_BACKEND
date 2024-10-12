@@ -128,7 +128,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
          
             if isApiActive:
                 response = monitorApiTask.delay(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)  
-                setScheduleTasks(monitoredApi.apiCallInterval)        
+                # setScheduleTasks(monitoredApi.apiCallInterval)        
                 message = "API monitoring details updated successfully and API monitoring started"
             else:
                 response = revokeTask(monitoredApi.taskId)

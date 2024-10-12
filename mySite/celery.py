@@ -13,7 +13,7 @@ app = Celery('mySite')
 
 # Load task modules from all registered Django app configs.
 app.config_from_object('django.conf:settings', namespace='CELERY')
-app.autodiscover_tasks()
+
 app.conf.enable_utc=False
 app.conf.update(timezone='Asia/Kolkata')
 
@@ -25,7 +25,7 @@ def setScheduleTasks(min):
     },
   }
 
-
+app.autodiscover_tasks()
 app.conf.timezone = 'UTC'
 @app.task(bind=True)
 def debug_task(self):

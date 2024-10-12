@@ -61,12 +61,12 @@ def monitorApiTask(self, apiUrl, apiType, headers, id):
         )  
 
 @shared_task
-def periodicMonitoring(self):
+def periodicMonitoring():
     try:
         print("Test monitor api")
         active_monitors = MonitoredAPI.objects.filter(isApiActive=True)  # or any other filter
         for monitor in active_monitors:
-          monitorApiTask.apply_async((monitor.api_url, monitor.api_type, monitor.headers, monitor.id))
+          monitorApiTask.delay((monitor.api_url, monitor.api_type, monitor.headers, monitor.id))
     except Exception as e:
         raise Exception("error scheduling tasks")    
     
