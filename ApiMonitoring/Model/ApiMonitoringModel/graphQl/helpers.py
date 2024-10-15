@@ -1,6 +1,7 @@
 import math
 from graphql import GraphQLError
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
+from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from datetime import timedelta 
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
@@ -45,6 +46,7 @@ def calculateMetrices(apiMetrices, query_name):
         response_size_per_metrices = []
         first_byte_time = []
         response_time = []
+        response_time_dict_list = []
  
         # Common data fetching for metrics
         if query_name in ['availability_uptime', 'downtime']:
@@ -75,7 +77,11 @@ def calculateMetrices(apiMetrices, query_name):
             first_byte_time = list(apiMetrices.values_list('firstByteTime', flat=True))
  
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
-            response_time = list(apiMetrices.values_list('responseTime', flat=True))
+            response_time_with_timstamp = apiMetrices.values_list('timestamp', 'responseTime')
+            for timestamp, responseTime in response_time_with_timstamp:
+                response_time.append(responseTime)
+                response_time_dict_list.append({'timestamp': timestamp, 'responsetime': round(float(responseTime), 3)})
+            
  
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:
@@ -97,10 +103,10 @@ def calculateMetrices(apiMetrices, query_name):
             'error_count': total_failed_requests,
             'avg_response_size': round(sum(response_size_per_metrices) / len(response_size_per_metrices), 2) if len(response_size_per_metrices)>0 else 0,
             'avg_first_byte_time': round(sum(fbt.timestamp() for fbt in first_byte_time) / len(first_byte_time), 2) if len(first_byte_time)>0 else 0,
-            'response_time': response_time,
-            'percentile_50': {'curr_percentile_res_time': currentPercentile, 'percentage_diff': percentageDiff} if query_name == 'percentile_50' else None,
-            'percentile_90': {'curr_percentile_res_time': currentPercentile, 'percentage_diff': percentageDiff} if query_name == 'percentile_90' else None,
-            'percentile_99': {'curr_percentile_res_time': currentPercentile, 'percentage_diff': percentageDiff} if query_name == 'percentile_99' else None,
+            'response_time': response_time_dict_list,
+            'percentile_50': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_50' else None,
+            'percentile_90': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_90' else None,
+            'percentile_99': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_99' else None,
         }
  
     except GraphQLError as gql_error:
