@@ -17,6 +17,9 @@ class percentileResponseType(graphene.ObjectType):
    curr_percentile_res_time = graphene.Float()
    percentage_diff = graphene.Float()
 
+class responseTimeType(graphene.ObjectType):
+    timestamp = graphene.DateTime()
+    responsetime = graphene.Float()
 class validateApiResponse(graphene.ObjectType):
     status = graphene.Int() 
     success = graphene.Boolean()
@@ -36,7 +39,7 @@ class ApiMetricesType(DjangoObjectType):
     error_count = graphene.Int(name='error_count')
     avg_response_size = graphene.Float(name='avg_response_size')
     avg_first_byte_time = graphene.Float(name='avg_first_byte_time')
-    response_time = graphene.List(graphene.Float, name='response_time')
+    response_time = graphene.List(responseTimeType, name='response_time')
     percentile_50 = graphene.Field(percentileResponseType, name='percentile_50')  
     percentile_90 = graphene.Field(percentileResponseType, name='percentile_90')  
     percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')    
