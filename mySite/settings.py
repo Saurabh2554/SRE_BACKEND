@@ -56,7 +56,7 @@ ROOT_URLCONF = 'mySite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [r'C:\Users\sranja\OneDrive - infogroup\Desktop\Github\SRE_BACKEND\mySite\templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -146,5 +146,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email configuration
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT= os.getenv('EMAIL_PORT')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD=os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS=True
 
 

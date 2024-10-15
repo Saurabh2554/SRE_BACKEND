@@ -17,11 +17,12 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.enable_utc=False
 app.conf.update(timezone='Asia/Kolkata')
 
-def setScheduleTasks(min):
+def setScheduleTasks(apiName, min, serviceId):
    app.conf.beat_schedule = {
-    'monitor-api': {
+    f'monitor-api_{apiName}': {
         'task': 'ApiMonitoring.tasks.periodicMonitoring',
-        'schedule': crontab(minute=f'*/{min}'), 
+        'schedule': crontab(minute=f'*/{min}'),
+        'args':(serviceId) 
     },
   }
 

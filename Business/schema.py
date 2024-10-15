@@ -2,7 +2,10 @@ import graphene
 from .models import BusinessUnit , SubBusinessUnit
 from .types import BusinessUnitType , SubBusinessUnitType
 from .mutations import BusinessUnitCreateMutation,BusinessUnitUpdateMutation, SubBusinessUnitCreateMutation,SubBusinessUnitUpdateMutation
-from graphql import GraphQLError      
+from graphql import GraphQLError 
+from ApiMonitoring.tasks import SendEmailNotification
+
+     
                 
 class Query(graphene.ObjectType):
     all_sub_business_unit = graphene.List(SubBusinessUnitType )
@@ -14,8 +17,9 @@ class Query(graphene.ObjectType):
 #Get all business unit objects
     def resolve_all_business_unit(root , info):
         try:
+         SendEmailNotification('5736b749-40ac-48de-8a2d-f5033ea1d4e1')
          return BusinessUnit.objects.all()
-        except:
+        except Exception as e:
             return None   
  
 #Retreive single business unit object based on id

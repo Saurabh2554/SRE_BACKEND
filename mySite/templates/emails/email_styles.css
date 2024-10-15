@@ -1,0 +1,59 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 5px;
+    max-width: 600px;
+    margin: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header {
+    background-color: #2C3E50;
+    color: #ffffff;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+    font-size: 18px;
+}
+
+.content {
+    margin-top: 20px;
+}
+
+.api-info {
+    color: #e74c3c;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.metrics {
+    margin-top: 20px;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.metrics th, .metrics td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.metrics th {
+    background-color: #f2f2f2;
+}
+
+.cta {
+    margin-top: 20px;
+    text-align: center;
+    background-color: #3498db;
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+}

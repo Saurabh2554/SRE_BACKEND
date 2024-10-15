@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="emails/email_styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            API Monitoring Alert
+        </div>
+        <div class="content">
+            <p>The following API has encountered issues:</p>
+            <div class="api-info">{{ apiName }}</div>
+            <p>URL: <a href="{{ apiUrl }}">{{ apiUrl }}</a></p>
+            <table class="metrics">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Error Rate</td>
+                    <td>{{ error_rates }}%</td>
+                </tr>
+                <tr>
+                    <td>Success Rate</td>
+                    <td>{{ success_rates }}%</td>
+                </tr>
+                <tr>
+                    <td>Average Latency</td>
+                    <td>{{ avg_latency }} ms</td>
+                </tr>
+                <tr>
+                    <td>Throughput</td>
+                    <td>{{ throughput }}</td>
+                </tr>
+                <tr>
+                    <td>Availablility</td>
+                    <td>{{ availability_uptime }}</td>
+                </tr>
+                
+            </table>
+            <div class="cta">
+                Please take the necessary actions to resolve the issue.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

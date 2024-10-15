@@ -2,6 +2,7 @@ import logging
 from celery import shared_task
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
+from Business.models import BusinessUnit, SubBusinessUnit
 from ApiMonitoring.hitApi import hit_api
 from graphql import GraphQLError
 from celery import current_task
@@ -9,15 +10,21 @@ from celery.result import AsyncResult
 from celery.worker.control import revoke
 from celery.exceptions import Retry
 from .hitApi import APIError
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import SendEmailNotification
 
 logger = logging.getLogger(__name__)
 
-def revokeTask(taskId):
+def revokeTask(taskId, serviceId):
     try:
         if taskId:
             task_result = AsyncResult(taskId)
-            if task_result.state is not 'REVOKED' :
+            if task_result.state != 'REVOKED' :
                 revoke(taskId, terminate=True)
+                service = MonitoredAPI.objects.get(pk = serviceId)
+                service.isApiActive = False
+                service.save()
+
+                return "Service Revoked"
             else:
                 raise GraphQLError("Service is already revoked")
         else:
@@ -27,46 +34,51 @@ def revokeTask(taskId):
         raise GraphQLError(f"{ex}")
         
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def monitorApiTask(self, apiUrl, apiType, headers, id):
+def monitorApiTask(self, service):
     try:    
-        result = hit_api(apiUrl, apiType, headers)
+        result = hit_api(aervice.apiUrl, service.apiType, service.headers)
         if result['success']:
-            monitoredApi = MonitoredAPI.objects.get(pk = id)
-        
-            if monitoredApi:
-                monitoredApi.isApiActive = True
-                monitoredApi.taskId = current_task.request.id # Store the celery task Id
-                monitoredApi.save()
-            #saving mertices--- 
-                apiMetrices = APIMetrics.objects.create(
-                    api = monitoredApi,
-                    responseTime = result['response_time'],
-                    success = result['success'],
-                    statusCode = result['status'],
-                    errorMessage = result['error_message'],
-                    requestStartTime = result['start_time'],
-                    firstByteTime = result['end_time'],
-                    responseSize = result['response_size']
-                )
+    
+            service.isApiActive = True
+            service.taskId = current_task.request.id # Store the celery task Id
+            service.save()
+        #saving mertices--- 
+            apiMetrices = APIMetrics.objects.create(
+                api = service,
+                responseTime = result['response_time'],
+                success = result['success'],
+                statusCode = result['status'],
+                errorMessage = result['error_message'],
+                requestStartTime = result['start_time'],
+                firstByteTime = result['end_time'],
+                responseSize = result['response_size']
+            )
             
             return "Monitored"
         else:
             raise Retry("API call was not successful, retrying...")
 
     except (APIError, Retry) as e:
-        self.retry()
+        if self.request.retries == self.max_retries: # after 3 max retries
+            revokeTask(self.request.id , id) 
+            SendEmailNotification(id)
+
+        else:    
+          self.retry()
     except Exception as ex:
         raise GraphQLError(
             f"{ex}"
         )  
 
 @shared_task
-def periodicMonitoring():
+def periodicMonitoring(serviceId):
     try:
-        print("Test monitor api")
-        active_monitors = MonitoredAPI.objects.filter(isApiActive=True)  # or any other filter
-        for monitor in active_monitors:
-          monitorApiTask.delay((monitor.api_url, monitor.api_type, monitor.headers, monitor.id))
+        service = MonitoredAPI.objects.get(pk =serviceId)  # or any other filter
+        if service.isApiActive:
+          monitorApiTask.delay(service)
+
+    except MonitoredAPI.DoesNotExist as e:
+        raise Exception("Wrong service trigerred")    
     except Exception as e:
         raise Exception("error scheduling tasks")    
     

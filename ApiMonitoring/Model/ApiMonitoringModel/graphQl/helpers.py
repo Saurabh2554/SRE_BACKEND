@@ -2,6 +2,11 @@ import math
 from graphql import GraphQLError
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from datetime import timedelta 
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+import smtplib
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 def calculatePercentile(percentile_rank, response_time):
     # Number of response times
@@ -23,7 +28,6 @@ def calculatePercentile(percentile_rank, response_time):
     percentile_value = lower_bound_value + (position - math.floor(position)) * (upper_bound_value - lower_bound_value)
     
     return percentile_value
-
 
 def calculateMetrices(apiMetrices, query_name):
     try:
@@ -104,7 +108,6 @@ def calculateMetrices(apiMetrices, query_name):
     except Exception as e:
         raise GraphQLError(f"Unknown error occured!")
 
-
 def resolve_metrics(self, info):
         filtered_metrices = APIMetrics.objects.filter(api=self)
         from_date = info.context.from_date
@@ -117,3 +120,122 @@ def resolve_metrics(self, info):
 
         metrics = calculateMetrices(filtered_metrices.order_by('timestamp'), info.field_name)
         return metrics
+
+def SendEmailNotification(serviceId):
+    try:
+        # Fetch the monitored API object along with related data
+        service = MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit').get(pk=serviceId)
+        apiMetrices = APIMetrics.objects.filter(api=service)
+
+        if service:
+            # Extract recipient emails
+            businessUnitDl = service.businessUnit.businessUnitDl
+            subBusinessUnitDl = service.subBusinessUnit.subBusinessUnitDl
+            receiverEmail = service.recipientDl
+
+            # Email details
+            subject = "API Monitoring Task Failed"
+            from_email = settings.EMAIL_HOST_USER
+            to_email = [receiverEmail]
+            cc_email = [businessUnitDl, subBusinessUnitDl]
+
+            # Calculate metrics
+            context = {
+                'apiName': service.apiName,
+                'apiUrl':service.apiUrl,
+                'availability_uptime': calculateMetrices(apiMetrices, 'availability_uptime')['availability_uptime'],
+                'success_count': calculateMetrices(apiMetrices, 'success_count')['success_count'],
+                'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
+                'throughput': calculateMetrices(apiMetrices, 'throughput')['throughput'],
+                'success_rates': calculateMetrices(apiMetrices, 'success_rates')['success_rates'],
+                'error_count': calculateMetrices(apiMetrices, 'error_rates')['error_rates']
+            }
+
+
+            # Render email content
+            html_content = render_to_string('emails/notification_email.html', context)
+            html_msg = strip_tags(html_content)
+
+            # Prepare email
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=html_msg,
+                from_email=from_email,
+                to=to_email,
+                cc=cc_email
+            )
+            email.attach_alternative(html_content, 'text/html')
+            email.send(fail_silently=False)
+
+
+    except MonitoredAPI.DoesNotExist:
+        print(f'Monitored API with ID {serviceId} does not exist.')
+    
+    except (smtplib.SMTPAuthenticationError, smtplib.SMTPRecipientsRefused, 
+            smtplib.SMTPSenderRefused, smtplib.SMTPDataError, 
+            smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, 
+            TimeoutError) as e:
+        print(f"SMTP Error: {str(e)}")
+    
+    except Exception as e:
+        print(f"An unexpected error occurred: {str(e)}")
+     
+def get_service(serviceId):
+    try:
+        return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit').get(pk=serviceId)
+    except MonitoredAPI.DoesNotExist:
+        print(f'Monitored API with ID {serviceId} does not exist.')
+        return None
+
+def PrepareContext(apiMetrices, apiName, apiUrl):
+    return {
+        'apiName':apiName,
+        'apiUrl':apiUrl,
+        'availability_uptime': calculateMetrices(apiMetrices, 'availability_uptime')['availability_uptime'],
+        'success_count': calculateMetrices(apiMetrices, 'success_count')['success_count'],
+        'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
+        'throughput': calculateMetrices(apiMetrices, 'throughput')['throughput'],
+        'success_rates': calculateMetrices(apiMetrices, 'success_rates')['success_rates'],
+        'error_count': calculateMetrices(apiMetrices, 'error_rates')['error_rates']
+    }
+
+def send_email(service, context):
+    subject = "API Monitoring Task Failed"
+    from_email = settings.EMAIL_HOST_USER
+    to_email = ['rjnsaurabh143@gmail.com']
+    cc_email = [service.businessUnit.businessUnitDl, service.subBusinessUnit.subBusinessUnitDl]
+
+
+    html_content = render_to_string('emails/notification_email.html', context)
+    html_msg = strip_tags(html_content)
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=html_msg,
+        from_email=from_email,
+        to=to_email,
+        cc=cc_email
+    )
+    email.attach_alternative(html_content, 'text/html')
+    
+    try:
+        email.send(fail_silently=False)
+        print("Email sent successfully.")
+    except (smtplib.SMTPAuthenticationError, smtplib.SMTPRecipientsRefused, 
+            smtplib.SMTPSenderRefused, smtplib.SMTPDataError, 
+            smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, 
+            TimeoutError) as e:
+        print(f"SMTP Error: {str(e)}")
+    except Exception as e:
+        print(f"An unexpected error occurred while sending email: {str(e)}")
+
+
+def SendEmailNotification(serviceId):
+    service = get_service(serviceId)
+    if not service:
+        return
+
+    apiMetrices = APIMetrics.objects.filter(api=service)
+    context = PrepareContext(apiMetrices,service.apiName, service.apiUrl)
+
+    send_email(service, context)

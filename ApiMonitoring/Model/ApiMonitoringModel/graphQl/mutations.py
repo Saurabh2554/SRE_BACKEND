@@ -97,8 +97,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
-                response = monitorApiTask.delay(input.apiUrl, input.apiType, input.headers, newMonitoredApi.id)
-                setScheduleTasks(input.apiCallInterval)
+                setScheduleTasks(input.apiName, input.apiCallInterval)
                 return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
                 raise GraphQLError(f"{str(e)}")
@@ -126,9 +125,8 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
 
             monitoredApi.isApiActive = isApiActive
          
-            if isApiActive:
-                response = monitorApiTask.delay(monitoredApi.apiUrl, monitoredApi.apiType, monitoredApi.headers, id)  
-                # setScheduleTasks(monitoredApi.apiCallInterval)        
+            if isApiActive: 
+                setScheduleTasks(monitoredApi.apiName, monitoredApi.apiCallInterval, id)        
                 message = "API monitoring details updated successfully and API monitoring started"
             else:
                 response = revokeTask(monitoredApi.taskId)
