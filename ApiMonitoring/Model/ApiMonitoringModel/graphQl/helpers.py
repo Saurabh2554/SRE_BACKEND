@@ -9,22 +9,22 @@ import smtplib
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
-def calculatePercentile(percentile_rank, response_time):
+def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
-    num_responses = len(response_time)
+    num_responses = len(response_time_dict_list)
     if num_responses<1:
         raise GraphQLError("No response time available")
     # Calculate the percentile position (index)
     position = (percentile_rank / 100) * (num_responses + 1)
     
     # Sort the response times
-    sorted_times = sorted(response_time)
+    sorted_times = sorted(response_time_dict_list, key=lambda x: x['responsetime'] )
     
     # Find the value at the floor position (lower bound)
-    lower_bound_value = sorted_times[math.floor(position) - 1]
+    lower_bound_value = sorted_times[math.floor(position) - 1]['responsetime']
     
     # Find the value at the ceil position (upper bound), handle index out of range
-    upper_bound_value = sorted_times[math.ceil(position) - 1] if math.ceil(position) < num_responses else lower_bound_value
+    upper_bound_value = sorted_times[math.ceil(position) - 1]['responsetime'] if math.ceil(position) < num_responses else lower_bound_value
     # Calculate the percentile using interpolation
     percentile_value = lower_bound_value + (position - math.floor(position)) * (upper_bound_value - lower_bound_value)
     
@@ -45,7 +45,6 @@ def calculateMetrices(apiMetrices, query_name):
         latency_per_metrices = []
         response_size_per_metrices = []
         first_byte_time = []
-        response_time = []
         response_time_dict_list = []
  
         # Common data fetching for metrics
@@ -77,17 +76,14 @@ def calculateMetrices(apiMetrices, query_name):
             first_byte_time = list(apiMetrices.values_list('firstByteTime', flat=True))
  
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
-            response_time_with_timstamp = apiMetrices.values_list('timestamp', 'responseTime')
-            for timestamp, responseTime in response_time_with_timstamp:
-                response_time.append(responseTime)
-                response_time_dict_list.append({'timestamp': timestamp, 'responsetime': round(float(responseTime), 3)})
-            
+            for apiMetric in apiMetrices:
+                response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3)}) 
  
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:
             percentile_value = int(query_name.split('_')[1])
-            currentPercentile = calculatePercentile(percentile_value, response_time)
-            new_response_time_list = response_time if len(response_time) == 1 else response_time[:-1]
+            currentPercentile = calculatePercentile(percentile_value, response_time_dict_list)
+            new_response_time_list = response_time_dict_list if len(response_time_dict_list) == 1 else response_time_dict_list[:-1]
             previousPercentile = calculatePercentile(percentile_value, new_response_time_list)
             percentageDiff = -1 * (((currentPercentile - previousPercentile) / previousPercentile) * 100)
  
