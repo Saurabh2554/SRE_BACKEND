@@ -10,10 +10,10 @@ from celery.result import AsyncResult
 from celery.worker.control import revoke
 from celery.exceptions import Retry
 from .hitApi import APIError
-from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import SendEmailNotification
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import SendEmailNotification, SendNotificationOnTeams
 
 logger = logging.getLogger(__name__)
-
+@shared_task
 def revokeTask(taskId, serviceId):
     try:
         if taskId:
@@ -34,11 +34,11 @@ def revokeTask(taskId, serviceId):
         raise GraphQLError(f"{ex}")
         
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def monitorApiTask(self, service):
-    try:    
-        result = hit_api(aervice.apiUrl, service.apiType, service.headers)
+def monitorApiTask(self, serviceId):
+    try:
+        service = MonitoredAPI.objects.get(pk =serviceId)    
+        result = hit_api(service.apiUrl, service.apiType, service.headers)
         if result['success']:
-    
             service.isApiActive = True
             service.taskId = current_task.request.id # Store the celery task Id
             service.save()
@@ -60,12 +60,14 @@ def monitorApiTask(self, service):
 
     except (APIError, Retry) as e:
         if self.request.retries == self.max_retries: # after 3 max retries
-            revokeTask(self.request.id , id) 
-            SendEmailNotification(id)
+            revokeTask.delay(self.request.id , id) 
+            # SendEmailNotification(id)
+            # SendNotificationOnTeams(id)
 
         else:    
           self.retry()
     except Exception as ex:
+        print(f"inside the main tast hitting api : {ex}")
         raise GraphQLError(
             f"{ex}"
         )  
@@ -73,12 +75,16 @@ def monitorApiTask(self, service):
 @shared_task
 def periodicMonitoring(serviceId):
     try:
-        service = MonitoredAPI.objects.get(pk =serviceId)  # or any other filter
-        if service.isApiActive:
-          monitorApiTask.delay(service)
+        service = MonitoredAPI.objects.get(pk =serviceId)
+        print(service.isApiActive, "service is active")  # or any other filter
+        if service.isApiActive:  
+          monitorApiTask.delay(service.id)
 
     except MonitoredAPI.DoesNotExist as e:
+        
         raise Exception("Wrong service trigerred")    
     except Exception as e:
+        print(f"inside the periodic task {e}")
         raise Exception("error scheduling tasks")    
     
+#

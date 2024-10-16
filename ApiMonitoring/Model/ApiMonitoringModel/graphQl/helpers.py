@@ -8,6 +8,13 @@ from django.conf import settings
 import smtplib
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+import requests
+import os
+import json
+from adaptivecards.adaptivecard import AdaptiveCard
+from adaptivecards.elements import TextBlock
+from adaptivecards.containers import Column, ColumnSet, Container
+
 
 def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
@@ -198,7 +205,7 @@ def PrepareContext(apiMetrices, apiName, apiUrl):
         'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
         'throughput': calculateMetrices(apiMetrices, 'throughput')['throughput'],
         'success_rates': calculateMetrices(apiMetrices, 'success_rates')['success_rates'],
-        'error_count': calculateMetrices(apiMetrices, 'error_rates')['error_rates']
+        'error_rates': calculateMetrices(apiMetrices, 'error_rates')['error_rates']
     }
 
 def send_email(service, context):
@@ -231,6 +238,143 @@ def send_email(service, context):
     except Exception as e:
         print(f"An unexpected error occurred while sending email: {str(e)}")
 
+    
+
+def SendNotificationOnTeams(context):
+    try:
+        adaptiveCardJson = {
+    "type": "message",
+    "attachments": [
+        {
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "type": "AdaptiveCard",
+                "body": [
+        {
+            "type": "TextBlock",
+            "text": "API Monitoring Alert",
+            "weight": "Bolder",
+            "size": "Medium"
+        },
+        {
+            "type": "TextBlock",
+            "text": "The following API has encountered issues:",
+            "wrap": "True"
+        },
+        {
+            "type": "TextBlock",
+            "text": context['apiName'],  
+            "wrap": "True",
+            "weight": "Bolder",
+            "size": "Medium"
+        },
+        {
+            "type": "TextBlock",
+            "text": "URL:",
+            "wrap": "True"
+        },
+        {
+            "type": "TextBlock",
+            "text": f"[{context['apiUrl']}]({context['apiUrl']})",  
+            "wrap": "True",
+            "color": "Accent"
+        },
+        {
+            "type": "TextBlock",
+            "text": "Metrics",
+            "weight": "Bolder",
+            "size": "Medium"
+        },
+        {
+            "type": "ColumnSet",
+            "columns": [
+                {
+                    "type": "Column",
+                    "width": "auto",
+                    "items": [
+                        {
+                            "type": "TextBlock",
+                            "text": "Metric",
+                            "weight": "Bolder"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": "Error Rate"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": "Success Rate"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": "Average Latency"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": "Throughput"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": "Availability"
+                        }
+                    ]
+                },
+                {
+                    "type": "Column",
+                    "width": "auto",
+                    "items": [
+                        {
+                            "type": "TextBlock",
+                            "text": "Value",
+                            "weight": "Bolder"
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": f"{context['error_rates']}%"  
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": f"{context['success_rates']}%"  
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": f"{context['avg_latency']} ms"  
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": f"{context['throughput']}"  
+                        },
+                        {
+                            "type": "TextBlock",
+                            "text": f"{context['availability_uptime']}" 
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "TextBlock",
+            "text": "Please take the necessary actions to resolve the issue.",
+            "wrap": "True",
+            "weight": "Bolder",
+            "spacing": "Medium"
+        }
+
+                ],
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "version": "1.0"
+            }
+        }
+    ]
+}
+        headers = {
+            'Content-Type':'application/json'
+        }
+        response = requests.post(os.getenv('TEAMS_CHANNEL_WEBHOOK_URL'), headers=headers, data = json.dumps(adaptiveCardJson))
+        response.raise_for_status()
+    except Exception as e:
+        print(f"error sending notification on team: {e}")    
+
 
 def SendEmailNotification(serviceId):
     service = get_service(serviceId)
@@ -241,3 +385,7 @@ def SendEmailNotification(serviceId):
     context = PrepareContext(apiMetrices,service.apiName, service.apiUrl)
 
     send_email(service, context)
+    SendNotificationOnTeams(context)
+
+
+    

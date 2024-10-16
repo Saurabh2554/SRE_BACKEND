@@ -6,10 +6,27 @@ from  ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAP
 from  Business.models import BusinessUnit , SubBusinessUnit
 # from  ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from  graphql import GraphQLError
-from  ApiMonitoring.tasks import monitorApiTask, revokeTask
+from  ApiMonitoring.tasks import monitorApiTask, revokeTask, periodicMonitoring
 from .types import MonitoredApiInput
-from mySite.celery import setScheduleTasks
 import json
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
+
+def UpdateTask(taskId):
+    pass
+
+def CreatePeriodicTask(apiName, min, serviceId):
+    try:
+        schedule, created = CrontabSchedule.objects.get_or_create(minute=f'*/{min}')  
+        new_task = PeriodicTask.objects.create(
+            name=f'my_periodic_task_{apiName}',
+            task='ApiMonitoring.tasks.periodicMonitoring',
+            crontab=schedule,
+            args=json.dumps([f'{serviceId}']), 
+            enabled=True
+        )
+        return new_task
+    except Exception as e:    
+      pass
 
 def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
     try:
@@ -67,7 +84,8 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, headers, apiConfig, input)
     'restApiConfig': apiConfig['restApiConfig'],
     'graphqlApiconfig': apiConfig['graphQlApiConfig'],
     'recipientDl': input.recipientDl,
-    'createdBy': input.createdBy
+    'createdBy': input.createdBy,
+    'isApiActive':True
     }
     return monitored_api_data
 
@@ -85,6 +103,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
 
                 existingMonitorAPIs = CheckExistingApi(input = input)
+
                 if existingMonitorAPIs is not None :
                     if not existingMonitorAPIs.isApiActive:
                         return ApiMonitorUpdateMutation().mutate(info, id=existingMonitorAPIs.id, isApiActive=True, input=input)
@@ -96,10 +115,11 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
 
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
+                CreatePeriodicTask(input.apiName, input.apiCallInterval, newMonitoredApi.id)
 
-                setScheduleTasks(input.apiName, input.apiCallInterval)
                 return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
              except Exception as e:
+                print(f"Inside the create api Monitor: {e}")
                 raise GraphQLError(f"{str(e)}")
                   
                   
@@ -125,8 +145,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
 
             monitoredApi.isApiActive = isApiActive
          
-            if isApiActive: 
-                setScheduleTasks(monitoredApi.apiName, monitoredApi.apiCallInterval, id)        
+            if isApiActive:       
                 message = "API monitoring details updated successfully and API monitoring started"
             else:
                 response = revokeTask(monitoredApi.taskId)
