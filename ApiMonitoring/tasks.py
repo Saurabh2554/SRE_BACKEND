@@ -33,15 +33,15 @@ def revokeTask(taskId, serviceId):
     except Exception as ex:
         raise GraphQLError(f"{ex}")
         
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@shared_task(bind=True, max_retries=3, default_retry_delay=40)
 def monitorApiTask(self, serviceId):
     try:
         service = MonitoredAPI.objects.get(pk =serviceId)    
         result = hit_api(service.apiUrl, service.apiType, service.headers)
         if result['success']:
-            service.isApiActive = True
-            service.taskId = current_task.request.id # Store the celery task Id
-            service.save()
+            # service.isApiActive = True
+            # service.taskId = current_task.request.id # Store the celery task Id
+            # service.save()
         #saving mertices--- 
             apiMetrices = APIMetrics.objects.create(
                 api = service,
@@ -56,16 +56,25 @@ def monitorApiTask(self, serviceId):
             
             return "Monitored"
         else:
-            raise Retry("API call was not successful, retrying...")
+            raise Retry("API call was not successful, retrying...") 
 
     except (APIError, Retry) as e:
-        if self.request.retries == self.max_retries: # after 3 max retries
-            revokeTask.delay(self.request.id , id) 
-            # SendEmailNotification(id)
-            # SendNotificationOnTeams(id)
+      try:
+        if self.request.retries >= self.max_retries: # after 3 max retries
+            print(f"inside the 3rd retries and revoking the tasknnnnnnnnnnnnnnnnnnnnn  {self.request.id}")
+            revokeTask.delay(self.request.id , serviceId) 
+            print(f'retrying it again { self.request.retries } times')
+            SendEmailNotification(id)
+            SendNotificationOnTeams(id)
 
-        else:    
-          self.retry()
+        else: 
+          print(f'retrying it again { self.request.retries } time') 
+          print(self ,"selfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+          raise self.retry(exc =e)   
+      except Exception as notification_error:
+
+        print(f"inside nested exception................... {notification_error}")  
+        
     except Exception as ex:
         print(f"inside the main tast hitting api : {ex}")
         raise GraphQLError(
@@ -82,9 +91,9 @@ def periodicMonitoring(serviceId):
 
     except MonitoredAPI.DoesNotExist as e:
         
-        raise Exception("Wrong service trigerred")    
+        raise "Wrong service trigerred"  
     except Exception as e:
         print(f"inside the periodic task {e}")
-        raise Exception("error scheduling tasks")    
+        raise "error scheduling tasks"   
     
 #

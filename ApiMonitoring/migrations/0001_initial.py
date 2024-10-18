@@ -55,7 +55,6 @@ class Migration(migrations.Migration):
                 ('createdAt', models.DateTimeField(default=django.utils.timezone.now)),
                 ('recipientDl', models.EmailField(max_length=254)),
                 ('createdBy', models.EmailField(blank=True, max_length=254, null=True)),
-                ('taskId', models.CharField(blank=True, max_length=255, null=True)),
                 ('businessUnit', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Business.businessunit')),
                 ('graphqlApiconfig', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='ApiMonitoring.graphqlapiconfig')),
                 ('subBusinessUnit', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Business.subbusinessunit')),

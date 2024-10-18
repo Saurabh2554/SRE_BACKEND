@@ -5,6 +5,7 @@ from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPI
 from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from Business.models import BusinessUnit , SubBusinessUnit
 from django.utils import timezone
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 class MonitoredAPI(models.Model):
     API_TYPE_CHOICES = [
@@ -41,7 +42,7 @@ class MonitoredAPI(models.Model):
     recipientDl = models.EmailField(null = False , blank = False)
     createdBy = models.EmailField(null = True , blank = True)
 
-    taskId = models.CharField(max_length=255, blank=True, null=True)
+    taskId = models.ForeignKey(PeriodicTask, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
         return f"{self.apiName} ({self.apiType})"

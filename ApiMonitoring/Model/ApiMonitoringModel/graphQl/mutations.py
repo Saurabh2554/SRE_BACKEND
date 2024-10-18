@@ -11,8 +11,26 @@ from .types import MonitoredApiInput
 import json
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
-def UpdateTask(taskId):
-    pass
+def UpdateTask(taskId,enabled = True, min = None, ):
+    try:
+
+        periodicTask = PeriodicTask.objects.get(pk = taskId)
+        if min is not None:
+          crontab = CrontabSchedule.objects.get(id = periodicTask.crontab_id)
+          crontab.minute = f'*/{min}'
+          crontab.save()
+
+        periodicTask.enabled = enabled
+        periodicTask.save()  
+
+        return 'saved'
+    except CrontabSchedule.DoesNotExist as cdne:
+        raise "Schedule does not exist"    
+    except PeriodicTask.DoesNotExist as dne:
+        raise "Task does not exist" 
+    except Exception as e:
+       raise "unknown error occurred"
+
 
 def CreatePeriodicTask(apiName, min, serviceId):
     try:
@@ -25,8 +43,8 @@ def CreatePeriodicTask(apiName, min, serviceId):
             enabled=True
         )
         return new_task
-    except Exception as e:    
-      pass
+    except Exception as e: 
+        print("inside createTask method ",e)   
 
 def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
     try:
@@ -45,8 +63,9 @@ def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
 def CheckExistingApi(input):
   try:
     return MonitoredAPI.objects.filter(
-        apiUrl__iexact=f'{input.apiUrl}',
-        apiType=input.apiType
+        # apiUrl__iexact=f'{input.apiUrl}',
+        # apiType=input.apiType
+        apiName__iexact=f'{input.apiName}'
         ).first()
 
   except Exception as e:
@@ -91,42 +110,41 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, headers, apiConfig, input)
 
 # Monitor a new Api
 class ApiMonitorCreateMutation(graphene.Mutation):
-            class Arguments:
-                input = MonitoredApiInput(required = True)
+    class Arguments:
+        input = MonitoredApiInput(required = True)
+    
+    monitoredApi = graphene.Field(MoniterApiType) 
+    success = graphene.Boolean()
+    message = graphene.String()
+
+    def mutate(self, info, input):
+        try:
+            businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
+
+            existingMonitorAPIs = CheckExistingApi(input = input)
+
+            if existingMonitorAPIs is not None :
+                raise GraphQLError("Service with the same name already exist!")
+                    
+            apiConfig = CreateConfiguration(input) 
+
+            monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
             
-            monitoredApi = graphene.Field(MoniterApiType) 
-            success = graphene.Boolean()
-            message = graphene.String()
+            newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
+            taskResponse = CreatePeriodicTask(input.apiName, input.apiCallInterval, newMonitoredApi.id)
+            newMonitoredApi.taskId = taskResponse
+            newMonitoredApi.save()
+            periodicMonitoring.delay(MonitoredAPI.id)
 
-            def mutate(self, info, input):
-             try:
-                businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
-
-                existingMonitorAPIs = CheckExistingApi(input = input)
-
-                if existingMonitorAPIs is not None :
-                    if not existingMonitorAPIs.isApiActive:
-                        return ApiMonitorUpdateMutation().mutate(info, id=existingMonitorAPIs.id, isApiActive=True, input=input)
-                    else: 
-                        raise GraphQLError("Same service already being monitored")
-                        
-                apiConfig = CreateConfiguration(input) 
-
-                monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
-
-                newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
-                CreatePeriodicTask(input.apiName, input.apiCallInterval, newMonitoredApi.id)
-
-                return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
-             except Exception as e:
-                print(f"Inside the create api Monitor: {e}")
-                raise GraphQLError(f"{str(e)}")
+            return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
+        except Exception as e:
+            raise GraphQLError(f"{str(e)}")
                   
                   
 class ApiMonitorUpdateMutation(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)  
-        isApiActive = graphene.Boolean(required=True)
+        isApiActive = graphene.Boolean()
         input = MonitoredApiInput() 
 
     monitoredApi = graphene.Field(MoniterApiType)
@@ -138,26 +156,27 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             # Fetch the existing MonitoredAPI by its ID
             monitoredApi = MonitoredAPI.objects.get(pk=id)
             message = None
-        
-            monitoredApi.apiCallInterval = input.apiCallInterval if input and input.apiCallInterval else monitoredApi.apiCallInterval
-            monitoredApi.expectedResponseTime = input.expectedResponseTime if input and input.expectedResponseTime else monitoredApi.expectedResponseTime
-            monitoredApi.headers = input.headers if input and input.headers else monitoredApi.headers
+
+            if input is not None:
+                if input.apiCallInterval:
+                    monitoredApi.apiCallInterval = input.apiCallInterval
+
+                if input.expectedResponseTime:
+                    monitoredApi.expectedResponseTime = input.expectedresponseTime
+
+                if input.headers:
+                    monitoredApi.headers = input.headers  
+
 
             monitoredApi.isApiActive = isApiActive
-         
-            if isApiActive:       
-                message = "API monitoring details updated successfully and API monitoring started"
-            else:
-                response = revokeTask(monitoredApi.taskId)
-                monitoredApi.taskId = None
-                message = "Service Deactivated!"
+            UpdateTask(monitoredApi.taskId, monitoredApi.isApiActive, monitoredApi.apiCallInterval)
 
             monitoredApi.save()
 
             return ApiMonitorUpdateMutation(
                 monitoredApi=monitoredApi,
                 success=True,
-                message= message 
+                message= f'Service {"activated" if isApiActive else "deactivated"} ' 
             )
 
         except MonitoredAPI.DoesNotExist:

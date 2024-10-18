@@ -60,7 +60,7 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         return handle_response(response, start_time, end_time)
 
     except requests.exceptions.HTTPError as err_msg:
-         raise APIError(f"retry...")
+         raise APIError(f"retry...") from None
     
     except Exception as EX:
         raise GraphQLError("Some error occurred")
