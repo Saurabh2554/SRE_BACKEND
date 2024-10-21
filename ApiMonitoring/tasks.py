@@ -7,24 +7,53 @@ from ApiMonitoring.hitApi import hit_api
 from graphql import GraphQLError
 from celery import current_task
 from celery.result import AsyncResult
-from celery.worker.control import revoke
+from celery.app.control import Control
 from celery.exceptions import Retry
-from .hitApi import APIError
-from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import SendEmailNotification, SendNotificationOnTeams
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service, PrepareContext, send_email, SendNotificationOnTeams, UpdateTask
+from mySite.celery import app
 
 logger = logging.getLogger(__name__)
+
+@shared_task
+def SendNotification(serviceId):
+    try:
+        service = get_service(serviceId)
+    
+        if not service:
+            return
+
+        apiMetrices = APIMetrics.objects.filter(api=service)
+        context = PrepareContext(apiMetrices,service.apiName, service.apiUrl)
+
+        send_email(service, context)
+        SendNotificationOnTeams(context)
+
+    except Exception as e:
+        raise "Error sending notification!"    
+
+
 @shared_task
 def revokeTask(taskId, serviceId):
     try:
         if taskId:
             task_result = AsyncResult(taskId)
             if task_result.state != 'REVOKED' :
-                revoke(taskId, terminate=True)
-                service = MonitoredAPI.objects.get(pk = serviceId)
-                service.isApiActive = False
-                service.save()
 
-                return "Service Revoked"
+                control = Control(app = app)
+                control.revoke(task_id = taskId, terminate=True)
+                
+                service = get_service(serviceId)
+                service.isApiActive = False
+
+                if service.taskId:
+                  task_id = service.taskId.id
+                  UpdateTask(task_id, False)
+                
+                service.save()
+                
+                SendNotification.delay(serviceId)
+
+                return "Service Revoked"   
             else:
                 raise GraphQLError("Service is already revoked")
         else:
@@ -33,46 +62,38 @@ def revokeTask(taskId, serviceId):
     except Exception as ex:
         raise GraphQLError(f"{ex}")
         
-@shared_task(bind=True, max_retries=3, default_retry_delay=40)
+@shared_task(bind=True, max_retries=3)
 def monitorApiTask(self, serviceId):
-    try:
-        service = MonitoredAPI.objects.get(pk =serviceId)    
+    try: 
+        service = get_service(serviceId) 
         result = hit_api(service.apiUrl, service.apiType, service.headers)
+
+        apiMetrices = APIMetrics.objects.create(
+            api = service,
+            responseTime = result['response_time'],
+            success = result['success'],
+            statusCode = result['status'],
+            errorMessage = result['error_message'],
+            requestStartTime = result['start_time'],
+            firstByteTime = result['end_time'],
+            responseSize = result['response_size']
+        )
+    
         if result['success']:
-            # service.isApiActive = True
-            # service.taskId = current_task.request.id # Store the celery task Id
-            # service.save()
-        #saving mertices--- 
-            apiMetrices = APIMetrics.objects.create(
-                api = service,
-                responseTime = result['response_time'],
-                success = result['success'],
-                statusCode = result['status'],
-                errorMessage = result['error_message'],
-                requestStartTime = result['start_time'],
-                firstByteTime = result['end_time'],
-                responseSize = result['response_size']
-            )
-            
             return "Monitored"
         else:
             raise Retry("API call was not successful, retrying...") 
 
-    except (APIError, Retry) as e:
+    except (Retry) as ex:
       try:
         if self.request.retries >= self.max_retries: # after 3 max retries
-            print(f"inside the 3rd retries and revoking the tasknnnnnnnnnnnnnnnnnnnnn  {self.request.id}")
-            revokeTask.delay(self.request.id , serviceId) 
-            print(f'retrying it again { self.request.retries } times')
-            SendEmailNotification(id)
-            SendNotificationOnTeams(id)
+            revokeTask.delay(self.request.id , service.id) 
 
         else: 
-          print(f'retrying it again { self.request.retries } time') 
-          print(self ,"selfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
-          raise self.retry(exc =e)   
-      except Exception as notification_error:
+          retry_delay =   50 * (2 ** self.request.retries)
+          raise self.retry(exc =ex, countdown = retry_delay) 
 
+      except Exception as notification_error:
         print(f"inside nested exception................... {notification_error}")  
         
     except Exception as ex:
@@ -84,16 +105,14 @@ def monitorApiTask(self, serviceId):
 @shared_task
 def periodicMonitoring(serviceId):
     try:
-        service = MonitoredAPI.objects.get(pk =serviceId)
-        print(service.isApiActive, "service is active")  # or any other filter
+        service = get_service(serviceId)
+
         if service.isApiActive:  
           monitorApiTask.delay(service.id)
-
-    except MonitoredAPI.DoesNotExist as e:
-        
+ 
+    except MonitoredAPI.DoesNotExist as e:    
         raise "Wrong service trigerred"  
+
     except Exception as e:
-        print(f"inside the periodic task {e}")
-        raise "error scheduling tasks"   
+        print(f"error scheduling tasks: {e}")   
     
-#

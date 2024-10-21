@@ -4,6 +4,8 @@ from ApiMonitoring.hitApi import hit_api
 from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
 from graphql import GraphQLError
 import json
+from django.db.models import Q
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 
 class Query(graphene.ObjectType):
     api_type_choices = graphene.List(apiTypeChoice)
@@ -23,6 +25,8 @@ class Query(graphene.ObjectType):
         apiMonitoringId = graphene.UUID(), 
         from_date = graphene.DateTime(), 
         to_date = graphene.DateTime(),
+        searchParam = graphene.String(),
+        
         )
     
     get_service_by_id = graphene.Field(
@@ -58,40 +62,47 @@ class Query(graphene.ObjectType):
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
         
-    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None):
+    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None, searchParam = ""):
         try:
             monitoredApiResponse = None 
+            query_conditions = Q()
+
             info.context.from_date = from_date
             info.context.to_date = to_date
 
             if apiMonitoringId:  
               monitoredApiResponse = MonitoredAPI.objects.filter(id=apiMonitoringId)
-              info.context.from_date = from_date
-              info.context.to_date = to_date
+              from_date = None
+              to_date = None
 
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = MonitoredAPI.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
             else:
                 raise GraphQLError("Please provide either the apiMonitoringId or both businessUnit and subBusinessUnit.")
-            
-
-            if from_date: 
-                monitoredApiResponse = monitoredApiResponse.filter(createdAt__gte=from_date)
-            if to_date:
-                monitoredApiResponse = monitoredApiResponse.filter(createdAt__lte = to_date)   
-              
 
             if monitoredApiResponse.exists():
-                return monitoredApiResponse
+                if from_date: 
+                  query_conditions &=  Q(createdAt__gte=from_date)
+                if to_date:
+                  query_conditions &=  Q(createdAt__lte = to_date)
+                
+                query_conditions |= (Q(apiName__icontains=searchParam) | Q(apiUrl__icontains=searchParam))
+
+                monitoredApiResponse = monitoredApiResponse.filter( query_conditions )   
+
             else:
-                raise GraphQLError("No any api is set to monitored ever")  
+                raise GraphQLError("No any api is set to monitored ever") 
+
+            
+            
+            return monitoredApiResponse
 
         except Exception as e:
           raise GraphQLError(f"{str(e)}")  
 
-    def resolve_get_service_by_id(self,info,serviceId):
+    def resolve_get_service_by_id(self, info, serviceId):
        try:
-          monitoredApi = MonitoredAPI.objects.get(pk=serviceId)
+          monitoredApi = get_service(serviceId)
           return monitoredApi
        except MonitoredAPI.DoesNotExist:
             raise GraphQLError("Service Not Found!")

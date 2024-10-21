@@ -14,7 +14,7 @@ import json
 from adaptivecards.adaptivecard import AdaptiveCard
 from adaptivecards.elements import TextBlock
 from adaptivecards.containers import Column, ColumnSet, Container
-
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
@@ -190,11 +190,7 @@ def SendEmailNotification(serviceId):
         print(f"An unexpected error occurred: {str(e)}")
      
 def get_service(serviceId):
-    try:
-        return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit').get(pk=serviceId)
-    except MonitoredAPI.DoesNotExist:
-        print(f'Monitored API with ID {serviceId} does not exist.')
-        return None
+  return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit').get(pk=serviceId)
 
 def PrepareContext(apiMetrices, apiName, apiUrl):
     return {
@@ -228,6 +224,7 @@ def send_email(service, context):
     email.attach_alternative(html_content, 'text/html')
     
     try:
+        print("sending email first then on teams") 
         email.send(fail_silently=False)
         print("Email sent successfully.")
     except (smtplib.SMTPAuthenticationError, smtplib.SMTPRecipientsRefused, 
@@ -237,12 +234,11 @@ def send_email(service, context):
         print(f"SMTP Error: {str(e)}")
     except Exception as e:
         print(f"An unexpected error occurred while sending email: {str(e)}")
-
-    
-
+   
 def SendNotificationOnTeams(context):
     try:
         adaptiveCardJson = {
+    
     "type": "message",
     "attachments": [
         {
@@ -250,116 +246,115 @@ def SendNotificationOnTeams(context):
             "content": {
                 "type": "AdaptiveCard",
                 "body": [
-        {
-            "type": "TextBlock",
-            "text": "API Monitoring Alert",
-            "weight": "Bolder",
-            "size": "Medium"
-        },
-        {
-            "type": "TextBlock",
-            "text": "The following API has encountered issues:",
-            "wrap": "True"
-        },
-        {
-            "type": "TextBlock",
-            "text": context['apiName'],  
-            "wrap": "True",
-            "weight": "Bolder",
-            "size": "Medium"
-        },
-        {
-            "type": "TextBlock",
-            "text": "URL:",
-            "wrap": "True"
-        },
-        {
-            "type": "TextBlock",
-            "text": f"[{context['apiUrl']}]({context['apiUrl']})",  
-            "wrap": "True",
-            "color": "Accent"
-        },
-        {
-            "type": "TextBlock",
-            "text": "Metrics",
-            "weight": "Bolder",
-            "size": "Medium"
-        },
-        {
-            "type": "ColumnSet",
-            "columns": [
-                {
-                    "type": "Column",
-                    "width": "auto",
-                    "items": [
-                        {
-                            "type": "TextBlock",
-                            "text": "Metric",
-                            "weight": "Bolder"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "Error Rate"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "Success Rate"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "Average Latency"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "Throughput"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": "Availability"
-                        }
-                    ]
-                },
-                {
-                    "type": "Column",
-                    "width": "auto",
-                    "items": [
-                        {
-                            "type": "TextBlock",
-                            "text": "Value",
-                            "weight": "Bolder"
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": f"{context['error_rates']}%"  
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": f"{context['success_rates']}%"  
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": f"{context['avg_latency']} ms"  
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": f"{context['throughput']}"  
-                        },
-                        {
-                            "type": "TextBlock",
-                            "text": f"{context['availability_uptime']}" 
-                        }
-                    ]
-                }
-            ]
-        },
-        {
-            "type": "TextBlock",
-            "text": "Please take the necessary actions to resolve the issue.",
-            "wrap": "True",
-            "weight": "Bolder",
-            "spacing": "Medium"
-        }
-
+                    {
+                        "type": "TextBlock",
+                        "text": "🚨 API Monitoring Alert 🚨",
+                        "weight": "Bolder",
+                        "size": "Medium"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "The following API has encountered issues:",
+                        "wrap": "True"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"🔍 **API Name:** {context['apiName']}",
+                        "wrap": "True",
+                        "weight": "Bolder",
+                        "size": "Medium"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "🌐 **URL:**",
+                        "wrap": "True"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"[{context['apiUrl']}]({context['apiUrl']})",
+                        "wrap": "True",
+                        "color": "Accent"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "📊 **Metrics Overview:**",
+                        "weight": "Bolder",
+                        "size": "Medium"
+                    },
+                    {
+                        "type": "ColumnSet",
+                        "columns": [
+                            {
+                                "type": "Column",
+                                "width": "auto",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "📌 **Metric**",
+                                        "weight": "Bolder"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "❌ Error Rate"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "✅ Success Rate"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "⏱️ Average Latency"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "🚀 Throughput"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "📈 Availability"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Column",
+                                "width": "auto",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "📊 **Value**",
+                                        "weight": "Bolder"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text":  f"{context['error_rates']}%" 
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text":  f"{context['success_rates']}%" 
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": f"{context['avg_latency']} ms" 
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": f"{context['throughput']}" 
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text":  f"{context['availability_uptime']}" 
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "📢 Please take the necessary actions to resolve the issue.",
+                        "wrap": "True",
+                        "weight": "Bolder",
+                        "spacing": "Medium"
+                    }
                 ],
                 "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                 "version": "1.0"
@@ -367,6 +362,8 @@ def SendNotificationOnTeams(context):
         }
     ]
 }
+
+
         headers = {
             'Content-Type':'application/json'
         }
@@ -375,17 +372,38 @@ def SendNotificationOnTeams(context):
     except Exception as e:
         print(f"error sending notification on team: {e}")    
 
+def UpdateTask(taskId, enabled = True, min = None):
+    try:
 
-def SendEmailNotification(serviceId):
-    service = get_service(serviceId)
-    if not service:
-        return
+        periodicTask = PeriodicTask.objects.get(pk = taskId)
+        if min is not None:
+          crontab = CrontabSchedule.objects.get(id = periodicTask.crontab_id)
+          crontab.minute = f'*/{min}'
+          crontab.save()
 
-    apiMetrices = APIMetrics.objects.filter(api=service)
-    context = PrepareContext(apiMetrices,service.apiName, service.apiUrl)
+        periodicTask.enabled = enabled
+        periodicTask.save()  
 
-    send_email(service, context)
-    SendNotificationOnTeams(context)
+        return 'saved'
+    except CrontabSchedule.DoesNotExist as cdne:
+        raise "Schedule does not exist"    
+    except PeriodicTask.DoesNotExist as dne:
+        raise "Task does not exist" 
+    except Exception as e:
+       raise "unknown error occurred"
 
+def CreatePeriodicTask(apiName, min, serviceId):
+    try:
+        schedule, created = CrontabSchedule.objects.get_or_create(minute=f'*/{min}')  
+        new_task = PeriodicTask.objects.create(
+            name=f'my_periodic_task_{apiName}',
+            task='ApiMonitoring.tasks.periodicMonitoring',
+            crontab=schedule,
+            args=json.dumps([f'{serviceId}']), 
+            enabled=True
+        )
+        return new_task
+    except Exception as e: 
+        print("inside createTask method ",e)   
 
     

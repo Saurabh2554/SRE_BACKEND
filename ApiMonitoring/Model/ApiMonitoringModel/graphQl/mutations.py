@@ -9,42 +9,8 @@ from  graphql import GraphQLError
 from  ApiMonitoring.tasks import monitorApiTask, revokeTask, periodicMonitoring
 from .types import MonitoredApiInput
 import json
-from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import UpdateTask, CreatePeriodicTask, get_service
 
-def UpdateTask(taskId,enabled = True, min = None, ):
-    try:
-
-        periodicTask = PeriodicTask.objects.get(pk = taskId)
-        if min is not None:
-          crontab = CrontabSchedule.objects.get(id = periodicTask.crontab_id)
-          crontab.minute = f'*/{min}'
-          crontab.save()
-
-        periodicTask.enabled = enabled
-        periodicTask.save()  
-
-        return 'saved'
-    except CrontabSchedule.DoesNotExist as cdne:
-        raise "Schedule does not exist"    
-    except PeriodicTask.DoesNotExist as dne:
-        raise "Task does not exist" 
-    except Exception as e:
-       raise "unknown error occurred"
-
-
-def CreatePeriodicTask(apiName, min, serviceId):
-    try:
-        schedule, created = CrontabSchedule.objects.get_or_create(minute=f'*/{min}')  
-        new_task = PeriodicTask.objects.create(
-            name=f'my_periodic_task_{apiName}',
-            task='ApiMonitoring.tasks.periodicMonitoring',
-            crontab=schedule,
-            args=json.dumps([f'{serviceId}']), 
-            enabled=True
-        )
-        return new_task
-    except Exception as e: 
-        print("inside createTask method ",e)   
 
 def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
     try:
@@ -131,10 +97,12 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
             
             newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
+
             taskResponse = CreatePeriodicTask(input.apiName, input.apiCallInterval, newMonitoredApi.id)
             newMonitoredApi.taskId = taskResponse
+            periodicMonitoring.delay(newMonitoredApi.id)
+
             newMonitoredApi.save()
-            periodicMonitoring.delay(MonitoredAPI.id)
 
             return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
         except Exception as e:
@@ -154,7 +122,7 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
     def mutate(self, info, id, isApiActive, input = None):
         try:
             # Fetch the existing MonitoredAPI by its ID
-            monitoredApi = MonitoredAPI.objects.get(pk=id)
+            monitoredApi = get_service(id)
             message = None
 
             if input is not None:
@@ -167,10 +135,14 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
                 if input.headers:
                     monitoredApi.headers = input.headers  
 
-
             monitoredApi.isApiActive = isApiActive
-            UpdateTask(monitoredApi.taskId, monitoredApi.isApiActive, monitoredApi.apiCallInterval)
-
+            if monitoredApi.taskId:
+                task_id = monitoredApi.taskId.id
+                UpdateTask(task_id, monitoredApi.isApiActive, monitoredApi.apiCallInterval)
+            
+            if isApiActive:
+                periodicMonitoring.delay(id)
+            
             monitoredApi.save()
 
             return ApiMonitorUpdateMutation(

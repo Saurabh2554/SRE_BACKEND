@@ -4,8 +4,7 @@ from types import SimpleNamespace
 from django.utils import timezone
 from  graphql import GraphQLError
 import json
-class APIError(Exception):
-    pass
+
 
 def handle_response(response, start_time, end_time):
     error_messages = {
@@ -28,7 +27,7 @@ def handle_response(response, start_time, end_time):
     
     return {
             'status': response.status_code, 
-            'response_time': response_time * 1000, 
+            'response_time': round(float(response_time * 1000), 3) , 
             'error_message':  message, 
             'success':False if message else True,
             'start_time': start_time,
@@ -54,13 +53,8 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
      
         else:
             raise ValueError("Unsupported API type. Use 'REST' or 'GRAPHQL'.")
-    
-        response.raise_for_status()
 
         return handle_response(response, start_time, end_time)
-
-    except requests.exceptions.HTTPError as err_msg:
-         raise APIError(f"retry...") from None
     
     except Exception as EX:
         raise GraphQLError("Some error occurred")
