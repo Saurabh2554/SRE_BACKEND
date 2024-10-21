@@ -190,7 +190,7 @@ def SendEmailNotification(serviceId):
         print(f"An unexpected error occurred: {str(e)}")
      
 def get_service(serviceId):
-  return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit').get(pk=serviceId)
+  return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit','graphqlApiconfig','restApiConfig').get(pk=serviceId)
 
 def PrepareContext(apiMetrices, apiName, apiUrl):
     return {

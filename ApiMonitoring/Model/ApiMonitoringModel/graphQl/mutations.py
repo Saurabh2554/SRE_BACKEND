@@ -48,6 +48,7 @@ def CreateConfiguration(input):
             raise GraphQLError("Unsupported API Type.")
 
         api_config = api_config_mapping[input.apiType]()
+        
 
         return {
             'restApiConfig': api_config if input.apiType == 'REST' else None,
@@ -93,7 +94,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 raise GraphQLError("Service with the same name already exist!")
                     
             apiConfig = CreateConfiguration(input) 
-
+            print(apiConfig['graphQlApiConfig'],"configconfigconfig")
             monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
             
             newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)

@@ -23,7 +23,7 @@ def SendNotification(serviceId):
             return
 
         apiMetrices = APIMetrics.objects.filter(api=service)
-        context = PrepareContext(apiMetrices,service.apiName, service.apiUrl)
+        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
 
         send_email(service, context)
         SendNotificationOnTeams(context)
@@ -55,9 +55,9 @@ def revokeTask(taskId, serviceId):
 
                 return "Service Revoked"   
             else:
-                raise GraphQLError("Service is already revoked")
+                return "Service is already revoked"
         else:
-            raise GraphQLError("Invalid request!")
+            return "Invalid request!"
 
     except Exception as ex:
         raise GraphQLError(f"{ex}")
@@ -65,8 +65,13 @@ def revokeTask(taskId, serviceId):
 @shared_task(bind=True, max_retries=3)
 def monitorApiTask(self, serviceId):
     try: 
+        payload = None
         service = get_service(serviceId) 
-        result = hit_api(service.apiUrl, service.apiType, service.headers)
+        
+        if service.graphqlApiconfig:
+            payload = service.graphqlApiconfig.graphql_query
+
+        result = hit_api(service.apiUrl, service.apiType, service.headers, payload)
 
         apiMetrices = APIMetrics.objects.create(
             api = service,
@@ -91,27 +96,28 @@ def monitorApiTask(self, serviceId):
 
         else: 
           retry_delay =   50 * (2 ** self.request.retries)
-          raise self.retry(exc =ex, countdown = retry_delay) 
+          raise self.retry(exc =ex, countdown = 50) 
 
       except Exception as notification_error:
         print(f"inside nested exception................... {notification_error}")  
-        
+
+    except ValueError as ex:
+       print(ex)    
+
     except Exception as ex:
-        print(f"inside the main tast hitting api : {ex}")
-        raise GraphQLError(
-            f"{ex}"
-        )  
+        print(f"Error executing tasks : {ex}")
+       
 
 @shared_task
 def periodicMonitoring(serviceId):
     try:
         service = get_service(serviceId)
 
-        if service.isApiActive:  
-          monitorApiTask.delay(service.id)
+        # if service.isApiActive:  
+        monitorApiTask.delay(service.id)
  
     except MonitoredAPI.DoesNotExist as e:    
-        raise "Wrong service trigerred"  
+        print( "Wrong service trigerred"  )
 
     except Exception as e:
         print(f"error scheduling tasks: {e}")   

@@ -21,7 +21,6 @@ def handle_response(response, start_time, end_time):
     }
     response_time = response.elapsed.total_seconds()
     message = None
-    
     if response.status_code in error_messages:
         message = error_messages[response.status_code]
     
@@ -40,16 +39,20 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         response = None
         if headers: 
             headers = {header["key"]: header["value"] for header in headers if header["key"] and header["value"]}
-
+        
+        print(payload, "yyyyyyyyyyyyyyyyyyyyyyyyypayloadpayloadpayload")
         if api_type.upper() == 'REST':
             start_time = timezone.now()
             response = requests.get(api_url, headers=headers)
             end_time = timezone.now()
 
         elif api_type.upper() == 'GRAPHQL':
-            start_time = timezone.now()
-            response = requests.post(api_url, json=payload, headers = headers)
-            end_time = timezone.now()
+            if payload:
+                start_time = timezone.now()
+                response = requests.post(api_url, json={"query":payload}, headers = headers)
+                end_time = timezone.now()
+            else: 
+                raise ValueError("For GraphQl Api query is required!")    
      
         else:
             raise ValueError("Unsupported API type. Use 'REST' or 'GRAPHQL'.")
@@ -57,4 +60,4 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         return handle_response(response, start_time, end_time)
     
     except Exception as EX:
-        raise GraphQLError("Some error occurred")
+        raise "Some error occurred"
