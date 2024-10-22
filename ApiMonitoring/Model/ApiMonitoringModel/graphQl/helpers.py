@@ -162,7 +162,7 @@ def SendEmailNotification(serviceId):
 
 
             # Render email content
-            html_content = render_to_string('emails/notification_email.html', context)
+            html_content = render_to_string('notification_email.html', context)
             html_msg = strip_tags(html_content)
 
             # Prepare email

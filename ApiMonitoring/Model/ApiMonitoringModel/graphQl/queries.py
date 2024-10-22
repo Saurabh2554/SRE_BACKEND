@@ -57,7 +57,11 @@ class Query(graphene.ObjectType):
                 
                 result = hit_api(apiUrl, apiType, headers, payload)
 
-            return validateApiResponse(status = result['status'], success = result['success'])    
+                # json_response = response.json()
+                print(f' Result : {result}')
+                if result is not None:
+                   return validateApiResponse(status = result['status'], success = result['success'])
+                     
 
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
