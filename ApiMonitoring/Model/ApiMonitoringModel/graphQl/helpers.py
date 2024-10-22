@@ -84,7 +84,7 @@ def calculateMetrices(apiMetrices, query_name):
  
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
             for apiMetric in apiMetrices:
-                response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3)}) 
+                response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3), 'success' : apiMetric.success}) 
  
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:

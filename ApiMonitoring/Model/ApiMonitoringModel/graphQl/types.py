@@ -20,6 +20,7 @@ class percentileResponseType(graphene.ObjectType):
 class responseTimeType(graphene.ObjectType):
     timestamp = graphene.DateTime()
     responsetime = graphene.Float()
+    success = graphene.Boolean()
 class validateApiResponse(graphene.ObjectType):
     status = graphene.Int() 
     success = graphene.Boolean()
