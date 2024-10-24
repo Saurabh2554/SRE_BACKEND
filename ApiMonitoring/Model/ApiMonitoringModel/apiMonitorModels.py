@@ -2,7 +2,7 @@ import uuid
 from django.db import models
 from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIConfig
 from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
-from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
+# from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from Business.models import BusinessUnit , SubBusinessUnit
 from django.utils import timezone
 from django_celery_beat.models import PeriodicTask, CrontabSchedule

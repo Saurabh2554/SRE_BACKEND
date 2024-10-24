@@ -49,7 +49,7 @@ def handle_response(response, start_time, end_time, api_type):
                 'response_size' : len(response.content),
                 }
     except Exception as e :
-        print(f"Handle Response Exception : {str(e)}")
+        raise GraphQLError(f"Handle Response Exception : {str(e)}")
 
 def hit_api(api_url, api_type='REST', headers=None, payload=None):
     try:

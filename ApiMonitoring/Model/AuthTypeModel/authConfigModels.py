@@ -6,7 +6,6 @@ class Authentication(models.Model):
         ('API_KEY', 'API Key'),
         ('BASIC', 'Basic Authentication'),
         ('BEARER', 'Bearer Token (OAuth)'),
-        ('CUSTOM', 'Custom Authentication'),
     ]
 
     auth_type = models.CharField(max_length=50, choices=AUTH_TYPE_CHOICES, default='NONE')  # Type of authentication
