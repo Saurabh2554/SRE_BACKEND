@@ -8,3 +8,4 @@ class Query(authChoices_queries.Query, queries.Query):
 
 class Mutation(graphene.ObjectType):   
    create_api_monitor = mutations.ApiMonitorCreateMutation.Field() 
+   update_api_monitor = mutations.ApiMonitorUpdateMutation.Field()

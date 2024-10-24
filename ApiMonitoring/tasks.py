@@ -58,7 +58,7 @@ def revokeTask(taskId, serviceId):
                 return "Service is already revoked"
         else:
             return "Invalid request!"
-
+                        
     except Exception as ex:
         raise GraphQLError(f"{ex}")
         
