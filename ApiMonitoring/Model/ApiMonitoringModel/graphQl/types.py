@@ -24,6 +24,7 @@ class responseTimeType(graphene.ObjectType):
 class validateApiResponse(graphene.ObjectType):
     status = graphene.Int() 
     success = graphene.Boolean()
+    message = graphene.String()
 
 class ApiMetricesType(DjangoObjectType):
     class Meta:

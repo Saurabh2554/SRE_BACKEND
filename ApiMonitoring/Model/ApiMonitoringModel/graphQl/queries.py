@@ -42,12 +42,12 @@ class Query(graphene.ObjectType):
     def resolve_validate_api(self, info, apiUrl, apiType, query=None, headers=None):
         try:
             result = None
-            if apiType == 'REST':
+            if apiType.upper() == 'REST':
 
                 headers_dict = headers if headers else {}
                 result =  hit_api(apiUrl, apiType, headers_dict) 
 
-            elif apiType == 'GraphQL' :
+            elif apiType.upper() == 'GRAPHQL' :
                 if query is None:
                     raise GraphQLError("Query field is required if your api type is GraphQl")
 
@@ -56,9 +56,12 @@ class Query(graphene.ObjectType):
                 }
                 
                 result = hit_api(apiUrl, apiType, headers, payload)
-
-            return validateApiResponse(status = result['status'], success = result['success'])    
-
+            else:
+                raise GraphQLError("Unsupported API type. Use 'REST' or 'GRAPHQL'.")
+               
+            return validateApiResponse(status = result['status'], success = result['success'], message = result['error_message'])
+          
+                                 
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
         
