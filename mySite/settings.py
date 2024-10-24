@@ -7,6 +7,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+print(BASE_DIR)
 
 
 # Quick-start development settings - unsuitable for production
@@ -56,7 +57,7 @@ ROOT_URLCONF = 'mySite.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [r'C:\Users\sranja\OneDrive - infogroup\Desktop\Github\SRE_BACKEND\mySite\templates'],
+        'DIRS': [BASE_DIR / 'mySite' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -68,7 +69,7 @@ TEMPLATES = [
         },
     },
 ]
-
+print(TEMPLATES[0]['DIRS'])
 WSGI_APPLICATION = 'mySite.wsgi.application'
 
 
