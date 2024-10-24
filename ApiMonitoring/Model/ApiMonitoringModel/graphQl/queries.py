@@ -86,7 +86,7 @@ class Query(graphene.ObjectType):
                 if to_date:
                   query_conditions &=  Q(createdAt__lte = to_date)
                 
-                query_conditions |= (Q(apiName__icontains=searchParam) | Q(apiUrl__icontains=searchParam))
+                query_conditions &= (Q(apiName__icontains=searchParam) | Q(apiUrl__icontains=searchParam))
 
                 monitoredApiResponse = monitoredApiResponse.filter( query_conditions )   
 
