@@ -23,7 +23,7 @@ def SendNotification(serviceId):
             return
 
         apiMetrices = APIMetrics.objects.filter(api=service)
-        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
+        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl, serviceId)
 
         send_email(service, context)
         SendNotificationOnTeams(context)

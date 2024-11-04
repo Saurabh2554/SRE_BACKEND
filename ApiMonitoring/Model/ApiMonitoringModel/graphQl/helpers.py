@@ -192,7 +192,7 @@ def SendEmailNotification(serviceId):
 def get_service(serviceId):
   return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit','graphqlApiconfig','restApiConfig').get(pk=serviceId)
 
-def PrepareContext(apiMetrices, apiName, apiUrl):
+def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None):
     return {
         'apiName':apiName,
         'apiUrl':apiUrl,
@@ -201,7 +201,8 @@ def PrepareContext(apiMetrices, apiName, apiUrl):
         'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
         'throughput': calculateMetrices(apiMetrices, 'throughput')['throughput'],
         'success_rates': calculateMetrices(apiMetrices, 'success_rates')['success_rates'],
-        'error_rates': calculateMetrices(apiMetrices, 'error_rates')['error_rates']
+        'error_rates': calculateMetrices(apiMetrices, 'error_rates')['error_rates'],
+        'APIMonitorId': APIMonitorId
     }
 
 def send_email(service, context):
@@ -347,6 +348,17 @@ def SendNotificationOnTeams(context):
                                 ]
                             }
                         ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "🌐 **Dashboard URL: **",
+                        "wrap": "True"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"http://localhost:3000/api-details/{ context['APIMonitorId'] }",
+                        "wrap": "True",
+                        "color": "Accent"
                     },
                     {
                         "type": "TextBlock",
