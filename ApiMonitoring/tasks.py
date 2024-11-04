@@ -11,6 +11,7 @@ from celery.app.control import Control
 from celery.exceptions import Retry
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service, PrepareContext, send_email, SendNotificationOnTeams, UpdateTask
 from mySite.celery import app
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -121,4 +122,11 @@ def periodicMonitoring(serviceId):
 
     except Exception as e:
         print(f"error scheduling tasks: {e}")   
+
+# @shared_task
+# def delete_old_metrices():
+#     cutoff_date = datetime.now() - timedelta(days=90)
+#     deleted_count, _ = APIMetrics.objects.filter(timestamp_lt=cutoff_date).delete()
+#     print(f"Deleted {deleted_count} old API metrics from the database.")
+
     
