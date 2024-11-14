@@ -27,17 +27,17 @@ def handle_response(response, start_time, end_time, api_type):
         if response.status_code in error_messages:
             message = error_messages[response.status_code]
         
-        if api_type.upper() == 'GRAPHQL':
-            json_response = response.json()
-            print(json_response)
-            if 'errors' in json_response and len(json_response['errors']) > 0:
-                for index, error_dict in enumerate(json_response['errors']):
-                    error_info = {}
-                    error_info["message"] = error_dict.get("message")
+        
+        json_response = response.json()
+        print(json_response)
+        if 'errors' in json_response and len(json_response['errors']) > 0:
+            for index, error_dict in enumerate(json_response['errors']):
+                error_info = {}
+                error_info["message"] = error_dict.get("message")
 
-                    messageList[f"error_{index}"]  = error_info
+                messageList[f"error_{index}"]  = error_info
 
-                message = json.dumps(messageList)
+            message = json.dumps(messageList)
 
         return {
                 'status': response.status_code, 

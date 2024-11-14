@@ -24,7 +24,7 @@ def SendNotification(serviceId):
             return
 
         apiMetrices = APIMetrics.objects.filter(api=service)
-        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
+        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl, serviceId)
 
         send_email(service, context)
         SendNotificationOnTeams(context)
@@ -69,6 +69,7 @@ def monitorApiTask(self, serviceId):
         payload = None
         service = get_service(serviceId) 
         
+        # graphqlBody
         if service.graphqlApiconfig:
             payload = service.graphqlApiconfig.graphql_query
 
@@ -123,10 +124,15 @@ def periodicMonitoring(serviceId):
     except Exception as e:
         print(f"error scheduling tasks: {e}")   
 
-# @shared_task
-# def delete_old_metrices():
-#     cutoff_date = datetime.now() - timedelta(days=90)
-#     deleted_count, _ = APIMetrics.objects.filter(timestamp_lt=cutoff_date).delete()
-#     print(f"Deleted {deleted_count} old API metrics from the database.")
+@shared_task
+def delete_old_metrices():
+
+    try:
+        cutoff_date = datetime.now() - timedelta(days=90)
+        deleted_count, _ = APIMetrics.objects.filter(timestamp__lte=cutoff_date).delete()
+        print(f"Deleted {deleted_count} old API metrics from the database.")
+    except Exception as e:
+        print(f"delete_old_metrices error scheduling tasks: {e}")  
+    
 
     

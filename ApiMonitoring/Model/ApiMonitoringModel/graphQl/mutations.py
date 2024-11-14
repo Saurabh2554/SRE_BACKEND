@@ -67,8 +67,8 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, headers, apiConfig, input)
     'apiCallInterval': input.apiCallInterval,
     'expectedResponseTime': input.expectedResponseTime,
     'headers': headers,
-    'restApiConfig': apiConfig['restApiConfig'],
-    'graphqlApiconfig': apiConfig['graphQlApiConfig'],
+    # 'restApiConfig': apiConfig['restApiConfig'], method_name
+    # 'graphqlApiconfig': apiConfig['graphQlApiConfig'], Query_Body
     'recipientDl': input.recipientDl,
     'createdBy': input.createdBy,
     'isApiActive':True
@@ -94,7 +94,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 raise GraphQLError("Service with the same name already exist!")
                     
             apiConfig = CreateConfiguration(input) 
-            print(apiConfig['graphQlApiConfig'],"configconfigconfig")
+            # print(apiConfig['graphQlApiConfig'],"configconfigconfig")
             monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
             
             newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
