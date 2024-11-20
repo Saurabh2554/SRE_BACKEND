@@ -68,10 +68,17 @@ def monitorApiTask(self, serviceId):
         payload = None
         service = get_service(serviceId) 
         
-        if service.graphqlApiconfig:
-            payload = service.graphqlApiconfig.graphql_query
-
-        result = hit_api(service.apiUrl, service.apiType, service.headers, payload)
+        if service.requestBody is not None : 
+            payload = {
+                   'query' : service.requestBody
+                }
+        
+        if service.methodType.upper() == "POST" : 
+            if service.requestBody is None:
+                        raise GraphQLError("Query field is required if your api type is GraphQl")
+                    
+                
+        result = hit_api(service.apiUrl, service.methodType, service.headers, payload)
 
         apiMetrices = APIMetrics.objects.create(
             api = service,
