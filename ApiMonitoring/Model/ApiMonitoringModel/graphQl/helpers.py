@@ -193,8 +193,7 @@ def SendEmailNotification(serviceId):
 def get_service(serviceId):
   return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit','graphqlApiconfig','restApiConfig').get(pk=serviceId)
 
-def PrepareContext(apiMetrices, apiName, apiUrl):
-    
+def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None):
     return {
         'apiName':apiName,
         'apiUrl':apiUrl,
@@ -209,6 +208,7 @@ def PrepareContext(apiMetrices, apiName, apiUrl):
         'percentile_90': calculateMetrices(apiMetrices, 'percentile_90')['percentile_90'],
         'percentile_99': calculateMetrices(apiMetrices, 'percentile_99')['percentile_99'],
         'downtime': calculateMetrices(apiMetrices, 'downtime')['downtime'],
+        'APIMonitorId': APIMonitorId
     }
 
 def send_email(service, context):
@@ -354,6 +354,17 @@ def SendNotificationOnTeams(context):
                                 ]
                             }
                         ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "🌐 **Dashboard URL: **",
+                        "wrap": "True"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": f"http://localhost:3000/api-details/{ context['APIMonitorId'] }",
+                        "wrap": "True",
+                        "color": "Accent"
                     },
                     {
                         "type": "TextBlock",

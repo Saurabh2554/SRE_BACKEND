@@ -37,38 +37,37 @@ def CheckExistingApi(input):
   except Exception as e:
       raise GraphQLError(f"{e}")    
 
-def CreateConfiguration(input):
-    try:
-        api_config_mapping = {
-            'REST': lambda: RestAPIConfig.objects.create(method=input.apiType),
-            'GraphQL': lambda: GraphQLAPIConfig.objects.create(graphql_query=input.graphqlQuery)
-        }
+# def CreateConfiguration(input):
+#     try:
+#         api_config_mapping = {
+#             'REST': lambda: RestAPIConfig.objects.create(method=input.apiType),
+#             'GraphQL': lambda: GraphQLAPIConfig.objects.create(graphql_query=input.graphqlQuery)
+#         }
 
-        if input.apiType not in api_config_mapping:
-            raise GraphQLError("Unsupported API Type.")
+#         if input.apiType not in api_config_mapping:
+#             raise GraphQLError("Unsupported API Type.")
 
-        api_config = api_config_mapping[input.apiType]()
+#         api_config = api_config_mapping[input.apiType]()
         
 
-        return {
-            'restApiConfig': api_config if input.apiType == 'REST' else None,
-            'graphQlApiConfig': api_config if input.apiType == 'GraphQL' else None
-        }   
-    except Exception as e:
-        raise GraphQLError(f"{e}")    
+#         return {
+#             'restApiConfig': api_config if input.apiType == 'REST' else None,
+#             'graphQlApiConfig': api_config if input.apiType == 'GraphQL' else None
+#         }   
+#     except Exception as e:
+#         raise GraphQLError(f"{e}")    
     
-def CreateMonitorInput(businessUnit, subBusinessUnit, headers, apiConfig, input):
+def CreateMonitorInput(businessUnit, subBusinessUnit, headers, input):
     monitored_api_data = {
     'businessUnit': businessUnit,
     'subBusinessUnit': subBusinessUnit,
     'apiName': input.apiName,
-    'apiType': input.apiType,
     'apiUrl': input.apiUrl,
     'apiCallInterval': input.apiCallInterval,
     'expectedResponseTime': input.expectedResponseTime,
     'headers': headers,
-    'restApiConfig': apiConfig['restApiConfig'],
-    'graphqlApiconfig': apiConfig['graphQlApiConfig'],
+    'methodType' : input.methodType,
+    'requestBody' : input.requestBody,
     'recipientDl': input.recipientDl,
     'createdBy': input.createdBy,
     'isApiActive':True
@@ -93,9 +92,9 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             if existingMonitorAPIs is not None :
                 raise GraphQLError("Service with the same name already exist!")
                     
-            apiConfig = CreateConfiguration(input) 
-            print(apiConfig['graphQlApiConfig'],"configconfigconfig")
-            monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, apiConfig, input)
+            # apiConfig = CreateConfiguration(input) 
+            # print(apiConfig['graphQlApiConfig'],"configconfigconfig")
+            monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input.headers, input)
             
             newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 

@@ -1,7 +1,7 @@
 import graphene
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
-from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
+from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType, HeaderItem
 from graphql import GraphQLError
 import json
 from django.db.models import Q
@@ -13,10 +13,12 @@ class Query(graphene.ObjectType):
     validate_api = graphene.Field(
         validateApiResponse, 
         apiUrl = graphene.String(required=True),
-        apiType = graphene.String(required = True), 
-        query = graphene.String(),
-        headers = graphene.String()
+        methodType = graphene.String(required = True), 
+        requestBody = graphene.String(),
+        headers = graphene.List(HeaderItem)
     )
+
+
 
     get_all_metrices = graphene.List(
         ApiMetricesType, 
@@ -34,30 +36,24 @@ class Query(graphene.ObjectType):
        serviceId = graphene.UUID(required=True)
     )
 
-    def resolve_api_type_choices(self, info, **kwargs): 
-        choices = MonitoredAPI.API_TYPE_CHOICES
+    def resolve_method_type_choices(self, info, **kwargs): 
+        choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
      
 
-    def resolve_validate_api(self, info, apiUrl, apiType, query=None, headers=None):
+    def resolve_validate_api(self, info, apiUrl, methodType, requestBody=None, headers=None):
         try:
             result = None
-            if apiType.upper() == 'REST':
+    
+            headers_dict = None
+          
 
+            if methodType.upper() in ['GET', 'POST']:
                 headers_dict = headers if headers else {}
-                result =  hit_api(apiUrl, apiType, headers_dict) 
-
-            elif apiType.upper() == 'GRAPHQL' :
-                if query is None:
-                    raise GraphQLError("Query field is required if your api type is GraphQl")
-
-                payload = {
-                    'query': query
-                }
-                
-                result = hit_api(apiUrl, apiType, headers, payload)
+                                  
+                result = hit_api(apiUrl, methodType, headers_dict, requestBody)
             else:
-                raise GraphQLError("Unsupported API type. Use 'REST' or 'GRAPHQL'.")
+                raise GraphQLError("Unsupported Method type. Use 'GET' or 'POST'.")
                
             return validateApiResponse(status = result['status'], success = result['success'], message = result['error_message'])
           
