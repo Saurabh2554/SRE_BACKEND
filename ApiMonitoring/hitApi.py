@@ -8,6 +8,7 @@ import json
 
 def handle_response(response, start_time, end_time, api_type):
     try :
+        print(response , start_time, end_time, api_type ,"eeeeeeeeeeeeeee")
         error_messages = {
             400: "Bad Request: The server could not understand the request.",
             401: "Unauthorized: Authentication is required.",
@@ -28,7 +29,10 @@ def handle_response(response, start_time, end_time, api_type):
             message = error_messages[response.status_code]
         
         if api_type.upper() == 'GRAPHQL':
+            print(type(response), "lllllllllllllllllllll")
+
             json_response = response.json()
+
             print(json_response)
             if 'errors' in json_response and len(json_response['errors']) > 0:
                 for index, error_dict in enumerate(json_response['errors']):
@@ -38,6 +42,7 @@ def handle_response(response, start_time, end_time, api_type):
                     messageList[f"error_{index}"]  = error_info
 
                 message = json.dumps(messageList)
+
 
         return {
                 'status': response.status_code, 
@@ -73,4 +78,5 @@ def hit_api(api_url, api_type='REST', headers=None, payload=None):
         return handle_response(response, start_time, end_time, api_type)
     
     except Exception as EX:
+        print(EX, "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy")
         raise GraphQLError("Some error occurred")

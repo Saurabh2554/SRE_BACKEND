@@ -11,8 +11,26 @@ from celery.app.control import Control
 from celery.exceptions import Retry
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service, PrepareContext, send_email, SendNotificationOnTeams, UpdateTask
 from mySite.celery import app
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 logger = logging.getLogger(__name__)
+
+# def send_metrics_update(metrics_data):
+#     try:
+#         channel_layer = get_channel_layer()
+
+#         room_group_name = f"metrics_data"
+
+#         async_to_sync(channel_layer.group_send)(
+#             room_group_name,
+#             {
+#                 "type": "send_metrics_update",
+#                 "metrics": metrics_data,  
+#             }
+#         )
+#     except:
+#         pass
 
 @shared_task
 def SendNotification(serviceId):
@@ -83,7 +101,11 @@ def monitorApiTask(self, serviceId):
             firstByteTime = result['end_time'],
             responseSize = result['response_size']
         )
-    
+
+        apiMetrices = APIMetrics.objects.filter(api=service)
+        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
+        # send_metrics_update(context)
+
         if result['success']:
             return "Monitored"
         else:
@@ -96,7 +118,7 @@ def monitorApiTask(self, serviceId):
 
         else: 
           retry_delay =   50 * (2 ** self.request.retries)
-          raise self.retry(exc =ex, countdown = 50) 
+          raise self.retry(exc =ex, countdown = retry_delay) 
 
       except Exception as notification_error:
         print(f"inside nested exception................... {notification_error}")  

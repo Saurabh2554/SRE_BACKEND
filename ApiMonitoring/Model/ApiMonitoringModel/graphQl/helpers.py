@@ -126,7 +126,8 @@ def resolve_metrics(self, info):
             filtered_metrices = filtered_metrices.filter(timestamp__gte = from_date)
         if to_date:
             filtered_metrices = filtered_metrices.filter(timestamp__lte = to_date)  
-
+        
+        print()
         metrics = calculateMetrices(filtered_metrices.order_by('timestamp'), info.field_name)
         return metrics
 
@@ -193,6 +194,7 @@ def get_service(serviceId):
   return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit','graphqlApiconfig','restApiConfig').get(pk=serviceId)
 
 def PrepareContext(apiMetrices, apiName, apiUrl):
+    
     return {
         'apiName':apiName,
         'apiUrl':apiUrl,
@@ -201,7 +203,12 @@ def PrepareContext(apiMetrices, apiName, apiUrl):
         'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
         'throughput': calculateMetrices(apiMetrices, 'throughput')['throughput'],
         'success_rates': calculateMetrices(apiMetrices, 'success_rates')['success_rates'],
-        'error_rates': calculateMetrices(apiMetrices, 'error_rates')['error_rates']
+        'error_rates': calculateMetrices(apiMetrices, 'error_rates')['error_rates'],
+        'response_time': calculateMetrices(apiMetrices, 'response_time')['response_time'], 
+        'percentile_50': calculateMetrices(apiMetrices, 'percentile_50')['percentile_50'], 
+        'percentile_90': calculateMetrices(apiMetrices, 'percentile_90')['percentile_90'],
+        'percentile_99': calculateMetrices(apiMetrices, 'percentile_99')['percentile_99'],
+        'downtime': calculateMetrices(apiMetrices, 'downtime')['downtime'],
     }
 
 def send_email(service, context):
@@ -226,7 +233,7 @@ def send_email(service, context):
     try:
         print("sending email first then on teams") 
         email.send(fail_silently=False)
-        print("Email sent successfully.")
+
     except (smtplib.SMTPAuthenticationError, smtplib.SMTPRecipientsRefused, 
             smtplib.SMTPSenderRefused, smtplib.SMTPDataError, 
             smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected, 

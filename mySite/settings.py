@@ -7,7 +7,7 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-print(BASE_DIR)
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +25,6 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -69,7 +68,8 @@ TEMPLATES = [
         },
     },
 ]
-print(TEMPLATES[0]['DIRS'])
+
+
 WSGI_APPLICATION = 'mySite.wsgi.application'
 ASGI_APPLICATION = 'mySite.asgi.application'
 
@@ -92,7 +92,8 @@ GRAPHENE = {
 }
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    # "http://127.0.0.1:9000",
+     "http://127.0.0.1:9000",
+   
     
 ]
 
