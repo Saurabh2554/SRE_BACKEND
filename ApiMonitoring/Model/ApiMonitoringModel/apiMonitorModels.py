@@ -8,15 +8,15 @@ from django.utils import timezone
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 
 class MonitoredAPI(models.Model):
-    API_TYPE_CHOICES = [
-        ('REST', 'REST API'),
-        ('GraphQL', 'GraphQL API'),
+    METHOD_TYPE_CHOICES = [
+        ('GET', 'GET'),
+        ('POST', 'POST'),
     ]
     id=models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     businessUnit = models.ForeignKey(BusinessUnit ,on_delete = models.CASCADE)
     subBusinessUnit = models.ForeignKey(SubBusinessUnit ,on_delete = models.CASCADE)
     apiName = models.CharField(max_length=255, null=True, blank=True)  # API name
-    apiType = models.CharField(max_length=50, choices=API_TYPE_CHOICES)  # Type of API
+    # apiType = models.CharField(max_length=50, choices=API_TYPE_CHOICES)  # Type of API
     apiUrl = models.URLField()  # Common URL field for both REST and GraphQL
     
     
@@ -29,8 +29,10 @@ class MonitoredAPI(models.Model):
     # authentication = models.ForeignKey(Authentication, on_delete=models.SET_NULL, null=True, blank=True)  # Foreign key to Authentication
     
     # REST and GraphQL-specific configurations
-    restApiConfig = models.ForeignKey(RestAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
-    graphqlApiconfig = models.ForeignKey(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
+    # restApiConfig = models.ForeignKey(RestAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
+    methodType = models.CharField(max_length=10, choices=METHOD_TYPE_CHOICES)
+    # graphqlApiconfig = models.ForeignKey(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
+    requestBody = models.TextField(null = True, blank = True) #
 
     # Tracking the monitoring status
     isApiActive = models.BooleanField(default=False)  # Status if API is being monitored or not
@@ -45,6 +47,6 @@ class MonitoredAPI(models.Model):
     taskId = models.ForeignKey(PeriodicTask, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.apiName} ({self.apiType})"
+        return f"{self.apiName}"
 
 

@@ -29,7 +29,7 @@ class validateApiResponse(graphene.ObjectType):
 class ApiMetricesType(DjangoObjectType):
     class Meta:
         model = MonitoredAPI
-        fields = ('id', 'apiName','apiType', 'apiUrl','expectedResponseTime','isApiActive')
+        fields = ('id', 'apiName','methodType', 'apiUrl','expectedResponseTime','isApiActive')
 
     availability_uptime = graphene.Float(name='availability_uptime')
     success_rates = graphene.Float(name='success_rates')
@@ -94,11 +94,18 @@ class MonitoredApiInput(graphene.InputObjectType):
     businessUnit = graphene.UUID(required = True)
     subBusinessUnit = graphene.UUID(required = True)
     apiName = graphene.String()  
-    apiType = graphene.String()  
+    # apiType = graphene.String()  
     apiUrl = graphene.String()  
     apiCallInterval = graphene.Int()  
     expectedResponseTime = graphene.Int()  
     headers = graphene.JSONString() 
     graphqlQuery = graphene.String()
+    methodType = graphene.String()
+    requestBody = graphene.String()
     recipientDl = graphene.String(required = True)
     createdBy = graphene.String()
+
+
+class HeaderItem(graphene.InputObjectType):
+    key = graphene.String()     
+    value = graphene.String()
