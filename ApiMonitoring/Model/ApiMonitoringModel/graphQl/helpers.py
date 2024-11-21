@@ -196,10 +196,12 @@ def get_service(serviceId):
 def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage = None):
     for record in apiMetrices.values():
        print(record)
+       print(f"Check this Shit Msg: {apiMetrices.values('errorMessage')}")
+       print(f"Nice Message : {apiMetrices.values_list('errorMessage', flat=True).first() or ['No errors found']}")
     return {
         'apiName':apiName,
         'apiUrl':apiUrl,
-        'errorMessage':apiMetrices.values('errorMessage'),
+        'errorMessage': apiMetrices.values_list('errorMessage', flat=True).first() or ['No errors found'],
         'availability_uptime': calculateMetrices(apiMetrices, 'availability_uptime')['availability_uptime'],
         'success_count': calculateMetrices(apiMetrices, 'success_count')['success_count'],
         'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
@@ -217,7 +219,7 @@ def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage 
 def send_email(service, context, cc_email):
     subject = "API Monitoring Task Failed"
     from_email = settings.EMAIL_HOST_USER
-    to_email = ['rjnsaurabh143@gmail.com']
+    to_email = ['rjnsaurabh143@gmail.com', 'rumartime02@gmail.com']
 
 
     html_content = render_to_string('emails/notification_email.html', context)
