@@ -20,17 +20,16 @@ def handle_response(response, start_time, end_time):
 
         if 'json' in content_type:
             parsed_response = response.json()
-
-            if 'errors' in parsed_response and len(parsed_response['errors']) > 0:
-                for index, error_dict in enumerate(parsed_response['errors']):
-                    error_info = {}
-                    error_info["message"] = error_dict.get("message",'Unknown error')
-
-                    messageList[f"error_{index}"]  = error_info
-
-                message = json.dumps(messageList)
-
-
+            delimiter = "\n"
+            
+            errors = parsed_response.get('errors', [])
+            if errors:
+                message_lines = [
+                    f"{index + 1} . {error.get('message', 'Unknown error')}"
+                    for index, error in enumerate(errors)
+                ]
+                message = delimiter.join(message_lines)
+        # print(f"Error Message : {message}")    
         if 'xml' in content_type:
             parsed_response = xmltodict.parse(response.content)
            
