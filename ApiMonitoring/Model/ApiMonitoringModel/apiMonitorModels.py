@@ -1,7 +1,5 @@
 import uuid
 from django.db import models
-from ApiMonitoring.Model.ApiConfigModel.restApiConfigModels import RestAPIConfig
-from ApiMonitoring.Model.ApiConfigModel.graphQlApiConfigModels import GraphQLAPIConfig
 # from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from Business.models import BusinessUnit , SubBusinessUnit
 from django.utils import timezone
@@ -28,10 +26,7 @@ class MonitoredAPI(models.Model):
     # Link to authentication system
     # authentication = models.ForeignKey(Authentication, on_delete=models.SET_NULL, null=True, blank=True)  # Foreign key to Authentication
     
-    # REST and GraphQL-specific configurations
-    # restApiConfig = models.ForeignKey(RestAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
     methodType = models.CharField(max_length=10, choices=METHOD_TYPE_CHOICES)
-    # graphqlApiconfig = models.ForeignKey(GraphQLAPIConfig, on_delete=models.CASCADE, null=True, blank=True)
     requestBody = models.TextField(null = True, blank = True) #
 
     # Tracking the monitoring status
@@ -41,7 +36,7 @@ class MonitoredAPI(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     
     # owner
-    recipientDl = models.EmailField(null = False , blank = False)
+    recipientDl = models.JSONField(null = False , blank = False)
     createdBy = models.EmailField(null = True , blank = True)
 
     taskId = models.ForeignKey(PeriodicTask, on_delete=models.SET_NULL, blank=True, null=True)

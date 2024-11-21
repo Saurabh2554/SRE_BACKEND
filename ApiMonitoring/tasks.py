@@ -33,21 +33,27 @@ logger = logging.getLogger(__name__)
 #         pass
 
 @shared_task
-def SendNotification(serviceId):
+def SendNotification(serviceId, retryAttempts = None):
     try:
         service = get_service(serviceId)
-    
+        cc_email = []
         if not service:
             return
 
         apiMetrices = APIMetrics.objects.filter(api=service)
         context = PrepareContext(apiMetrices, service.apiName, service.apiUrl, serviceId)
+        
+        if retryAttempts ==2:
+            cc_email = [service.subBusinessUnit.subBusinessUnitDl]  
+        else:
+            cc_email = [service.businessUnit.businessUnitDl, service.subBusinessUnit.subBusinessUnitDl]      
 
-        send_email(service, context)
+        send_email(service, context, cc_email)
         SendNotificationOnTeams(context)
 
     except Exception as e:
-        raise "Error sending notification!"    
+        print(f"email notification exception: {e}")
+        raise TypeError("Error sending notification!")    
 
 
 @shared_task
@@ -83,20 +89,9 @@ def revokeTask(taskId, serviceId):
 @shared_task(bind=True, max_retries=3)
 def monitorApiTask(self, serviceId):
     try: 
-        payload = None
         service = get_service(serviceId) 
-        
-        if service.requestBody is not None : 
-            payload = {
-                   'query' : service.requestBody
-                }
-        
-        if service.methodType.upper() == "POST" : 
-            if service.requestBody is None:
-                        raise GraphQLError("Query field is required if your api type is GraphQl")
-                    
                 
-        result = hit_api(service.apiUrl, service.methodType, service.headers, payload)
+        result = hit_api(service.apiUrl, service.methodType, service.headers, service.requestBody)
 
         apiMetrices = APIMetrics.objects.create(
             api = service,
@@ -112,7 +107,7 @@ def monitorApiTask(self, serviceId):
         apiMetrices = APIMetrics.objects.filter(api=service)
         context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
         # send_metrics_update(context)
-
+        print(result)
         if result['success']:
             return "Monitored"
         else:
@@ -122,9 +117,10 @@ def monitorApiTask(self, serviceId):
       try:
         if self.request.retries >= self.max_retries: # after 3 max retries
             revokeTask.delay(self.request.id , service.id) 
-
-        else: 
-          retry_delay =   50 * (2 ** self.request.retries)
+        
+        else:
+          SendNotification.delay(service.id, self.request.retries)
+          retry_delay =   60 * (2 ** self.request.retries)
           raise self.retry(exc =ex, countdown = retry_delay) 
 
       except Exception as notification_error:

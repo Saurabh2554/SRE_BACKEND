@@ -191,12 +191,15 @@ def SendEmailNotification(serviceId):
         print(f"An unexpected error occurred: {str(e)}")
      
 def get_service(serviceId):
-  return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit','graphqlApiconfig','restApiConfig').get(pk=serviceId)
+  return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit',).get(pk=serviceId)
 
-def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None):
+def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage = None):
+    for record in apiMetrices.values():
+       print(record)
     return {
         'apiName':apiName,
         'apiUrl':apiUrl,
+        'errorMessage':apiMetrices.values('errorMessage'),
         'availability_uptime': calculateMetrices(apiMetrices, 'availability_uptime')['availability_uptime'],
         'success_count': calculateMetrices(apiMetrices, 'success_count')['success_count'],
         'avg_latency': calculateMetrices(apiMetrices, 'avg_latency')['avg_latency'],
@@ -211,11 +214,10 @@ def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None):
         'APIMonitorId': APIMonitorId
     }
 
-def send_email(service, context):
+def send_email(service, context, cc_email):
     subject = "API Monitoring Task Failed"
     from_email = settings.EMAIL_HOST_USER
     to_email = ['rjnsaurabh143@gmail.com']
-    cc_email = [service.businessUnit.businessUnitDl, service.subBusinessUnit.subBusinessUnitDl]
 
 
     html_content = render_to_string('emails/notification_email.html', context)
@@ -282,6 +284,14 @@ def SendNotificationOnTeams(context):
                         "wrap": "True",
                         "color": "Accent"
                     },
+                    {
+                        "type": "TextBlock",
+                        "text": f"💢 **Error :** {context['errorMessage']}",
+                        "wrap": "True",
+                        "weight": "Bolder",
+                        "size": "Large"
+                    },
+                    
                     {
                         "type": "TextBlock",
                         "text": "📊 **Metrics Overview:**",

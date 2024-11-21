@@ -8,30 +8,13 @@ import xmltodict
 
 def handle_response(response, start_time, end_time):
     try :
-        print(response , start_time, end_time, api_type ,"eeeeeeeeeeeeeee")
-        error_messages = {
-            400: "Bad Request: The server could not understand the request.",
-            401: "Unauthorized: Authentication is required.",
-            403: "Forbidden: You do not have permission to access this resource.",
-            404: "Not Found: The requested resource was not found.",
-            405: "Method Not Allowed: The request method is not supported.",
-            408: "Request Timeout: The server timed out waiting for the request.",
-            429: "Too Many Requests: You have sent too many requests in a given amount of time.",
-            500: "Internal Server Error: The server encountered an unexpected condition.",
-            502: "Bad Gateway: Received an invalid response from the upstream server.",
-            503: "Service Unavailable: The server is not ready to handle the request.",
-            'Unknown': f""
-
-        }
         response_time = response.elapsed.total_seconds()
         message = None
         messageList = {}
         parsed_response = {}
 
         content_type = response.headers.get('Content-Type', '').lower()
-        print(content_type)
 
-        
         if response.status_code > 400 and response.status_code < 600:
             message = f'{response.reason} :  {response.status_code}' 
 
@@ -45,7 +28,7 @@ def handle_response(response, start_time, end_time):
 
                     messageList[f"error_{index}"]  = error_info
 
-            message = json.dumps(messageList)
+                message = json.dumps(messageList)
 
 
         if 'xml' in content_type:
@@ -81,22 +64,18 @@ def hit_api(api_url, method_type='GET', headers=None, payload=None):
     try:
         response = None
         print(f"Check Payload : {payload}")
-        print(f'Headers Validate APi : {headers}')
         if headers: 
             headers = {header["key"]: header["value"] for header in headers if header["key"] and header["value"]}
 
         if method_type.upper() in ["GET", "POST"]:
+
             start_time = timezone.now()
-            response = getattr(requests, method_type.lower())(api_url, json=json.dumps(payload), headers=headers)
+            response = getattr(requests, method_type.lower())(api_url, data = payload, headers=headers)
             end_time = timezone.now()
+            res = requests.post
         else:
             raise ValueError("Unsupported Method type. Use 'GET' or 'POST'.")
-
-
-        print(response.text)
-        print(response)
-
-
+        print(response.json())
         return handle_response(response, start_time, end_time)
 
 
