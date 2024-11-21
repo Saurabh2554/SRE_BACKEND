@@ -196,8 +196,7 @@ def get_service(serviceId):
 def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage = None):
     for record in apiMetrices.values():
        print(record)
-       print(f"Check this Shit Msg: {apiMetrices.values('errorMessage')}")
-       print(f"Nice Message : {apiMetrices.values_list('errorMessage', flat=True).first() or ['No errors found']}")
+
     return {
         'apiName':apiName,
         'apiUrl':apiUrl,
