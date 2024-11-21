@@ -8,7 +8,7 @@ from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 
 class Query(graphene.ObjectType):
-    api_type_choices = graphene.List(apiTypeChoice)
+    method_type_choices = graphene.List(apiTypeChoice)
 
     validate_api = graphene.Field(
         validateApiResponse, 
@@ -38,6 +38,8 @@ class Query(graphene.ObjectType):
 
     def resolve_method_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
+        type_check = [ {'key': key, 'value': value} for key, value in choices]
+        print(type_check)
         return  [ {'key': key, 'value': value} for key, value in choices]
      
 
