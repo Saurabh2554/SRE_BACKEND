@@ -9,7 +9,7 @@ class MoniterApiType(DjangoObjectType):
       model = MonitoredAPI
       fields = "__all__"
 
-class apiTypeChoice(graphene.ObjectType):
+class methodTypeChoice(graphene.ObjectType):
     key = graphene.String()  
     value = graphene.String()
 
@@ -44,7 +44,8 @@ class ApiMetricesType(DjangoObjectType):
     response_time = graphene.List(responseTimeType, name='response_time')
     percentile_50 = graphene.Field(percentileResponseType, name='percentile_50')  
     percentile_90 = graphene.Field(percentileResponseType, name='percentile_90')  
-    percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')    
+    percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')  
+    last_Error_Occurred = graphene.DateTime()  
     
 
     def resolve_availability_uptime(self, info):
@@ -87,7 +88,10 @@ class ApiMetricesType(DjangoObjectType):
         return resolve_metrics(self,info)['percentile_90']  
     
     def resolve_percentile_99(self, info):
-        return resolve_metrics(self,info)['percentile_99']  
+        return resolve_metrics(self,info)['percentile_99'] 
+
+    def resolve_last_Error_Occured(self, info):
+        return resolve_metrics(self,info)['availability_uptime']     
 
     
 #Monitored  Api input values

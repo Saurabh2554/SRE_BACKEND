@@ -1,14 +1,14 @@
 import graphene
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
-from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
+from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
 from graphql import GraphQLError
 import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 
 class Query(graphene.ObjectType):
-    method_type_choices = graphene.List(apiTypeChoice)
+    method_type_choices = graphene.List(methodTypeChoice)
 
     validate_api = graphene.Field(
         validateApiResponse, 
@@ -48,7 +48,7 @@ class Query(graphene.ObjectType):
             if methodType.upper() in ['GET', 'POST']:
                 if headers:
                     headers = json.loads(headers)  
-                                  
+
                 result = hit_api(apiUrl, methodType, headers, requestBody)    
             else:
                 raise GraphQLError("Unsupported Method type. Use 'GET' or 'POST'.")

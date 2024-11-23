@@ -85,7 +85,10 @@ def calculateMetrices(apiMetrices, query_name):
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
             for apiMetric in apiMetrices:
                 response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3), 'success' : apiMetric.success}) 
- 
+       
+        if query_name == 'last_Error_Occurred':
+            last_Error_Occurred = apiMetrices.filter(success=False).latest('timestamp')
+
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:
             percentile_value = int(query_name.split('_')[1])
@@ -110,6 +113,7 @@ def calculateMetrices(apiMetrices, query_name):
             'percentile_50': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_50' else None,
             'percentile_90': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_90' else None,
             'percentile_99': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_99' else None,
+            'last_Error_Occurred':last_Error_Occurred
         }
  
     except GraphQLError as gql_error:
