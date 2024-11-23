@@ -29,7 +29,8 @@ def handle_response(response, start_time, end_time):
                     for index, error in enumerate(errors)
                 ]
                 message = delimiter.join(message_lines)
-        # print(f"Error Message : {message}")    
+        # print(f"Error Message : {message}") 
+           
         if 'xml' in content_type:
             parsed_response = xmltodict.parse(response.content)
            
@@ -62,21 +63,19 @@ def handle_response(response, start_time, end_time):
 def hit_api(api_url, method_type='GET', headers=None, payload=None):
     try:
         response = None
-        print(f"Check Payload : {payload}")
-        if headers: 
-            headers = {header["key"]: header["value"] for header in headers if header["key"] and header["value"]}
+        headers_dict = {}
+
+        if headers:
+            headers_dict = {header["key"]: header["value"] for header in headers if header.get("key") and header.get("value")}
 
         if method_type.upper() in ["GET", "POST"]:
-
             start_time = timezone.now()
-            response = getattr(requests, method_type.lower())(api_url, data = payload, headers=headers)
+            response = getattr(requests, method_type.lower())(api_url, data = payload, headers=headers_dict)
             end_time = timezone.now()
-            res = requests.post
+            
         else:
             raise ValueError("Unsupported Method type. Use 'GET' or 'POST'.")
-        print(response.json())
         return handle_response(response, start_time, end_time)
-
 
     except Exception as EX:
         print(f"Some error occurred :: {EX} ")

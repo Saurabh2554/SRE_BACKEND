@@ -1,7 +1,7 @@
 import graphene
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.hitApi import hit_api
-from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType, HeaderItem
+from .types import apiTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
 from graphql import GraphQLError
 import json
 from django.db.models import Q
@@ -15,7 +15,7 @@ class Query(graphene.ObjectType):
         apiUrl = graphene.String(required=True),
         methodType = graphene.String(required = True), 
         requestBody = graphene.String(),
-        headers = graphene.List(HeaderItem)
+        headers = graphene.String()
     )
 
 
@@ -38,28 +38,25 @@ class Query(graphene.ObjectType):
 
     def resolve_method_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
-        type_check = [ {'key': key, 'value': value} for key, value in choices]
-        print(type_check)
         return  [ {'key': key, 'value': value} for key, value in choices]
      
 
     def resolve_validate_api(self, info, apiUrl, methodType, requestBody=None, headers=None):
         try:
             result = None
-    
-            headers_dict = None
           
-
             if methodType.upper() in ['GET', 'POST']:
-                headers_dict = headers if headers else []
-                print(headers_dict)                
-                result = hit_api(apiUrl, methodType, headers_dict, requestBody)
+                if headers:
+                    headers = json.loads(headers)  
+                                  
+                result = hit_api(apiUrl, methodType, headers, requestBody)    
             else:
                 raise GraphQLError("Unsupported Method type. Use 'GET' or 'POST'.")
                
             return validateApiResponse(status = result['status'], success = result['success'], message = result['error_message'])
           
-                                 
+        except json.JSONDecodeError as e:
+          raise GraphQLError(f"Invalid Header format:")                        
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
         

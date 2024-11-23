@@ -127,7 +127,6 @@ def resolve_metrics(self, info):
         if to_date:
             filtered_metrices = filtered_metrices.filter(timestamp__lte = to_date)  
         
-        print()
         metrics = calculateMetrices(filtered_metrices.order_by('timestamp'), info.field_name)
         return metrics
 

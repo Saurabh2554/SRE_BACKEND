@@ -14,7 +14,6 @@ class MonitoredAPI(models.Model):
     businessUnit = models.ForeignKey(BusinessUnit ,on_delete = models.CASCADE)
     subBusinessUnit = models.ForeignKey(SubBusinessUnit ,on_delete = models.CASCADE)
     apiName = models.CharField(max_length=255, null=True, blank=True)  # API name
-    # apiType = models.CharField(max_length=50, choices=API_TYPE_CHOICES)  # Type of API
     apiUrl = models.URLField()  # Common URL field for both REST and GraphQL
     
     

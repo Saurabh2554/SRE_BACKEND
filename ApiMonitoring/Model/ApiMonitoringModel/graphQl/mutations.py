@@ -70,7 +70,10 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
             if existingMonitorAPIs is not None :
                 raise GraphQLError("Service with the same name already exist!")
-                    
+
+            if headers:
+                input.headers = json.loads(input.headers)  
+
             monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input)
             
             newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
@@ -82,6 +85,9 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             newMonitoredApi.save()
 
             return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
+       
+        except json.JSONDecodeError as e:
+          raise GraphQLError(f"Invalid Header format") 
         except Exception as e:
             raise GraphQLError(f"{str(e)}")
                   

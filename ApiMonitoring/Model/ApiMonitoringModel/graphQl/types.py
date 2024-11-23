@@ -89,21 +89,16 @@ class ApiMetricesType(DjangoObjectType):
     def resolve_percentile_99(self, info):
         return resolve_metrics(self,info)['percentile_99']  
 
-
-class HeaderItem(graphene.InputObjectType):
-    key = graphene.String()     
-    value = graphene.String()
     
 #Monitored  Api input values
 class MonitoredApiInput(graphene.InputObjectType):
     businessUnit = graphene.UUID(required = True)
     subBusinessUnit = graphene.UUID(required = True)
-    apiName = graphene.String()  
-    # apiType = graphene.String()  
+    apiName = graphene.String()    
     apiUrl = graphene.String()  
     apiCallInterval = graphene.Int()  
     expectedResponseTime = graphene.Int()  
-    headers = graphene.List(HeaderItem) 
+    headers = graphene.String() 
     methodType = graphene.String()
     requestBody = graphene.String()
     recipientDl = graphene.List(graphene.String, required=True)
