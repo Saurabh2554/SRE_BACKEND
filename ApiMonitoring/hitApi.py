@@ -16,9 +16,9 @@ def handle_response(response, start_time, end_time):
 
         content_type = response.headers.get('Content-Type', '').lower()
 
-        if response.status_code > 400:
+        if response.status_code >= 400:
             message = f'{response.reason} :  {response.status_code}' 
-            if response.reason.strip() is '':
+            if not (response.reason):
                 message  =  message = f"{response.status_code} : {http_error_messages.get(response.status_code, 'Unknown Error Occurred!')}"     
 
         if 'json' in content_type:
