@@ -1,5 +1,5 @@
 # Dictionary of HTTP status codes (400 and above) and their meanings
-http_status_codes = {
+http_error_messages = {
     400: "Bad Request",
     401: "Unauthorized",
     402: "Payment Required",
