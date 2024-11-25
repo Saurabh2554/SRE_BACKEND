@@ -53,7 +53,8 @@ def calculateMetrices(apiMetrices, query_name):
         response_size_per_metrices = []
         first_byte_time = []
         response_time_dict_list = []
- 
+        last_Error_Occurred = None
+
         # Common data fetching for metrics
         if query_name in ['availability_uptime', 'downtime']:
             total_uptime_requests = apiMetrices.filter(statusCode__gte=200, statusCode__lt=400).count()
@@ -87,7 +88,9 @@ def calculateMetrices(apiMetrices, query_name):
                 response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3), 'success' : apiMetric.success}) 
        
         if query_name == 'last_Error_Occurred':
-            last_Error_Occurred = apiMetrices.filter(success=False).latest('timestamp')
+            last_Error_Occurred = apiMetrices.filter(success=False).order_by('-timestamp').first()
+            if last_Error_Occurred:
+                error_timestamp = last_Error_Occurred.timestamp
 
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:
