@@ -71,7 +71,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             if existingMonitorAPIs is not None :
                 raise GraphQLError("Service with the same name already exist!")
 
-            if headers:
+            if input.headers:
                 input.headers = json.loads(input.headers)  
 
             monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input)
