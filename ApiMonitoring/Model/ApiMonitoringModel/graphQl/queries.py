@@ -18,8 +18,6 @@ class Query(graphene.ObjectType):
         headers = graphene.String()
     )
 
-
-
     get_all_metrices = graphene.List(
         ApiMetricesType, 
         businessUnit = graphene.UUID(), 
@@ -90,9 +88,7 @@ class Query(graphene.ObjectType):
 
             else:
                 raise GraphQLError("No any api is set to monitored ever") 
-
-            
-            
+  
             return monitoredApiResponse
 
         except Exception as e:
