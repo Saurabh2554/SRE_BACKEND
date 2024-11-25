@@ -53,7 +53,9 @@ def calculateMetrices(apiMetrices, query_name):
         response_size_per_metrices = []
         first_byte_time = []
         response_time_dict_list = []
- 
+        last_Error_Occurred = None
+        error_timestamp = None
+
         # Common data fetching for metrics
         if query_name in ['availability_uptime', 'downtime']:
             total_uptime_requests = apiMetrices.filter(statusCode__gte=200, statusCode__lt=400).count()
@@ -87,7 +89,9 @@ def calculateMetrices(apiMetrices, query_name):
                 response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3), 'success' : apiMetric.success}) 
        
         if query_name == 'last_Error_Occurred':
-            last_Error_Occurred = apiMetrices.filter(success=False).latest('timestamp')
+            last_Error_Occurred = apiMetrices.filter(success=False).last()
+            if last_Error_Occurred:
+                error_timestamp = last_Error_Occurred.timestamp
 
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:
@@ -96,7 +100,7 @@ def calculateMetrices(apiMetrices, query_name):
             new_response_time_list = response_time_dict_list if len(response_time_dict_list) == 1 else response_time_dict_list[:-1]
             previousPercentile = calculatePercentile(percentile_value, new_response_time_list)
             percentageDiff = -1 * (((currentPercentile - previousPercentile) / previousPercentile) * 100)
- 
+
         # Return metrics with calculations
         return {
             'availability_uptime': availability_uptime,
@@ -113,7 +117,7 @@ def calculateMetrices(apiMetrices, query_name):
             'percentile_50': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_50' else None,
             'percentile_90': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_90' else None,
             'percentile_99': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_99' else None,
-            'last_Error_Occurred':last_Error_Occurred
+            'last_Error_Occurred':error_timestamp
         }
  
     except GraphQLError as gql_error:

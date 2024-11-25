@@ -45,7 +45,7 @@ class ApiMetricesType(DjangoObjectType):
     percentile_50 = graphene.Field(percentileResponseType, name='percentile_50')  
     percentile_90 = graphene.Field(percentileResponseType, name='percentile_90')  
     percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')  
-    last_Error_Occurred = graphene.DateTime()
+    last_Error_Occurred = graphene.DateTime(name='last_Error_Occurred')
       
     
 
@@ -91,8 +91,8 @@ class ApiMetricesType(DjangoObjectType):
     def resolve_percentile_99(self, info):
         return resolve_metrics(self,info)['percentile_99'] 
 
-    def resolve_last_Error_Occured(self, info):
-        return resolve_metrics(self,info)['availability_uptime']     
+    def resolve_last_Error_Occurred(self, info):
+        return resolve_metrics(self,info)['last_Error_Occurred']     
 
     
 #Monitored  Api input values
