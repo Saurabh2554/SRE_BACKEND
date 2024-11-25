@@ -3,7 +3,6 @@ from operator import attrgetter
 from types import SimpleNamespace
 from django.utils import timezone
 from  graphql import GraphQLError
-from http_status_codes import http_status_codes
 import json
 import xmltodict
 
@@ -16,10 +15,8 @@ def handle_response(response, start_time, end_time):
 
         content_type = response.headers.get('Content-Type', '').lower()
 
-        if response.status_code > 400:
+        if response.status_code > 400 and response.status_code < 600:
             message = f'{response.reason} :  {response.status_code}' 
-            if message is None :
-                message  =  message = f"{response.status_code} : {http_status_codes.get(response.status_code, 'Unknown Error Occurred!')}"     
 
         if 'json' in content_type:
             parsed_response = response.json()
