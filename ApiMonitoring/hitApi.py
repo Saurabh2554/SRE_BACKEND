@@ -13,9 +13,9 @@ def handle_response(response, start_time, end_time):
         message = None
         messageList = {}
         parsed_response = {}
-
+        
         content_type = response.headers.get('Content-Type', '').lower()
-
+        
         if response.status_code >= 400:
             message = f'{response.reason} :  {response.status_code}' 
             if not (response.reason):
@@ -24,8 +24,12 @@ def handle_response(response, start_time, end_time):
         if 'json' in content_type:
             parsed_response = response.json()
             delimiter = "\n"
+            errors = []
+            if isinstance(parsed_response, dict):
+                print("inside dict block")
+                errors = parsed_response.get('errors', [])
             
-            errors = parsed_response.get('errors', [])
+            
             if errors:
                 message_lines = [
                     f"{index + 1} . {error.get('message', 'Unknown error')}"

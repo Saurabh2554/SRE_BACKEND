@@ -97,8 +97,8 @@ class ApiMetricesType(DjangoObjectType):
     
 #Monitored  Api input values
 class MonitoredApiInput(graphene.InputObjectType):
-    businessUnit = graphene.UUID(required = True)
-    subBusinessUnit = graphene.UUID(required = True)
+    businessUnit = graphene.UUID()
+    subBusinessUnit = graphene.UUID()
     apiName = graphene.String()    
     apiUrl = graphene.String()  
     apiCallInterval = graphene.Int()  

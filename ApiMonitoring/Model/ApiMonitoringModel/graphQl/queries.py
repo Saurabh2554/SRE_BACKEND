@@ -7,6 +7,7 @@ import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 
+
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
 
@@ -62,12 +63,11 @@ class Query(graphene.ObjectType):
         try:
             monitoredApiResponse = None 
             query_conditions = Q()
-
-            info.context.from_date = from_date
-            info.context.to_date = to_date
-
+            
             if apiMonitoringId:  
               monitoredApiResponse = MonitoredAPI.objects.filter(id=apiMonitoringId)
+              info.context.from_date = from_date
+              info.context.to_date = to_date
               from_date = None
               to_date = None
 

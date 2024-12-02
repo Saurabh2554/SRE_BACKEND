@@ -138,8 +138,8 @@ def periodicMonitoring(serviceId):
     try:
         service = get_service(serviceId)
 
-        # if service.isApiActive:  
-        monitorApiTask.delay(service.id)
+        if service.isApiActive:  
+          monitorApiTask.delay(service.id)
  
     except MonitoredAPI.DoesNotExist as e:    
         print( "Wrong service trigerred"  )

@@ -15,9 +15,12 @@ from adaptivecards.adaptivecard import AdaptiveCard
 from adaptivecards.elements import TextBlock
 from adaptivecards.containers import Column, ColumnSet, Container
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django.db.models import Q
+
 
 def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
+    
     num_responses = len(response_time_dict_list)
     if num_responses<1:
         raise GraphQLError("No response time available")
@@ -41,6 +44,8 @@ def calculateMetrices(apiMetrices, query_name):
     try:
         
         total_no_of_requests = apiMetrices.count()
+        
+
         if total_no_of_requests == 0:
             raise GraphQLError("No data available for the given API.")
  
@@ -53,7 +58,7 @@ def calculateMetrices(apiMetrices, query_name):
         response_size_per_metrices = []
         first_byte_time = []
         response_time_dict_list = []
-        last_Error_Occurred = None
+        last_Error_Occurred_timestamp = None
 
         # Common data fetching for metrics
         if query_name in ['availability_uptime', 'downtime']:
@@ -90,7 +95,7 @@ def calculateMetrices(apiMetrices, query_name):
         if query_name == 'last_Error_Occurred':
             last_Error_Occurred = apiMetrices.filter(success=False).order_by('-timestamp').first()
             if last_Error_Occurred:
-                error_timestamp = last_Error_Occurred.timestamp
+                last_Error_Occurred_timestamp = last_Error_Occurred.timestamp
 
         # Percentile calculations
         if query_name in ['percentile_50', 'percentile_90', 'percentile_99']:
@@ -116,7 +121,7 @@ def calculateMetrices(apiMetrices, query_name):
             'percentile_50': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_50' else None,
             'percentile_90': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_90' else None,
             'percentile_99': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_99' else None,
-            'last_Error_Occurred':last_Error_Occurred
+            'last_Error_Occurred':last_Error_Occurred_timestamp
         }
  
     except GraphQLError as gql_error:
@@ -125,16 +130,28 @@ def calculateMetrices(apiMetrices, query_name):
         raise GraphQLError(f"Unknown error occured!")
 
 def resolve_metrics(self, info):
-        filtered_metrices = APIMetrics.objects.filter(api=self)
-        from_date = info.context.from_date
-        to_date = info.context.to_date
+        filtered_metrices = APIMetrics.objects.filter(api=self).order_by('timestamp')
+        query_conditions = Q()
 
-        if from_date:
-            filtered_metrices = filtered_metrices.filter(timestamp__gte = from_date)
-        if to_date:
-            filtered_metrices = filtered_metrices.filter(timestamp__lte = to_date)  
+        latest_timestamp = filtered_metrices.last().timestamp if filtered_metrices.exists() else None
+        timestamp_12_hours_before = latest_timestamp - timedelta(hours=12) if latest_timestamp else None
+        print(latest_timestamp, " ", timestamp_12_hours_before ," hhhhhhhhhhhhhhhhhhhhhhh")
+        if hasattr(info.context , 'from_date') and info.context.from_date is not None:  
+          query_conditions &=  Q(timestamp__gte=info.context.from_date)  
+
+        if hasattr(info.context , 'to_date') and info.context.to_date is not None:  
+          query_conditions &=  Q(timestamp__lte=info.context.to_date)
         
-        metrics = calculateMetrices(filtered_metrices.order_by('timestamp'), info.field_name)
+        if hasattr(info.context , 'from_date') and info.context.from_date is None: 
+          if timestamp_12_hours_before is not None:
+                query_conditions &=  Q(timestamp__gte=timestamp_12_hours_before)  
+
+        if hasattr(info.context , 'to_date') and info.context.to_date is None: 
+          if latest_timestamp is not None:
+                query_conditions &=  Q(timestamp__lte=latest_timestamp) 
+
+        filtered_metrices = filtered_metrices.filter( query_conditions )
+        metrics = calculateMetrices(filtered_metrices, info.field_name)
         return metrics
 
 def SendEmailNotification(serviceId):
