@@ -93,7 +93,7 @@ def calculateMetrices(apiMetrices, query_name):
                 response_time_dict_list.append({'timestamp': apiMetric.timestamp, 'responsetime': round(float(apiMetric.responseTime), 3), 'success' : apiMetric.success}) 
        
         if query_name == 'last_Error_Occurred':
-            last_Error_Occurred = apiMetrices.filter(success=False).order_by('-timestamp').first()
+            last_Error_Occurred = apiMetrices.filter(success=False).last()
             if last_Error_Occurred:
                 last_Error_Occurred_timestamp = last_Error_Occurred.timestamp
 
@@ -104,7 +104,7 @@ def calculateMetrices(apiMetrices, query_name):
             new_response_time_list = response_time_dict_list if len(response_time_dict_list) == 1 else response_time_dict_list[:-1]
             previousPercentile = calculatePercentile(percentile_value, new_response_time_list)
             percentageDiff = -1 * (((currentPercentile - previousPercentile) / previousPercentile) * 100)
- 
+
         # Return metrics with calculations
         return {
             'availability_uptime': availability_uptime,
