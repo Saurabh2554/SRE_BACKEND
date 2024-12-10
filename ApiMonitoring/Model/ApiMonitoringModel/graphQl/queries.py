@@ -6,7 +6,7 @@ from graphql import GraphQLError
 import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
-
+import requests
 
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
@@ -17,6 +17,10 @@ class Query(graphene.ObjectType):
         methodType = graphene.String(required = True), 
         requestBody = graphene.String(),
         headers = graphene.String()
+    )
+    validate_teams_channel = graphene.Field(
+        validateApiResponse,
+        channelUrl=graphene.String(required=True),
     )
 
     get_all_metrices = graphene.List(
@@ -58,7 +62,27 @@ class Query(graphene.ObjectType):
           raise GraphQLError(f"Invalid Header format:")                        
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
-        
+
+    def resolve_validate_teams_channel(self, info, channelUrl):
+        try:
+            response = None
+            headers = {
+                'Content-Type': 'application/json'
+            }
+
+            response = requests.post(channelUrl, headers=headers, data=json.dumps({"text": "Test message from Postman"}))
+            print(response.json())
+            if(response.status_code>=400 and response.status_code<=500):
+                return validateApiResponse(status=response.status_code, success=False,
+                                       message='InValid')
+
+            return validateApiResponse(status=response.status_code, success=True,
+                                       message='Valid')
+
+        except Exception as e:
+            return validateApiResponse(status=400, success=False,
+                                       message='InValid')
+
     def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None, searchParam = ""):
         try:
             monitoredApiResponse = None 
