@@ -49,7 +49,8 @@ def SendNotification(serviceId, retryAttempts = None):
             cc_email = [service.businessUnit.businessUnitDl, service.subBusinessUnit.subBusinessUnitDl]      
 
         send_email(service, context, cc_email)
-        SendNotificationOnTeams(context)
+        SendNotificationOnTeams(service.teamsChannelWebhookURL
+        ,context)
 
     except Exception as e:
         print(f"email notification exception: {e}")
@@ -90,7 +91,7 @@ def revokeTask(taskId, serviceId):
 def monitorApiTask(self, serviceId):
     try: 
         service = get_service(serviceId) 
-                
+        print(service.requestBody, "body body bodu=y")
         result = hit_api(service.apiUrl, service.methodType, service.headers, service.requestBody)
 
         apiMetrices = APIMetrics.objects.create(
@@ -116,6 +117,7 @@ def monitorApiTask(self, serviceId):
     except (Retry) as ex:
       try:
         if self.request.retries >= self.max_retries: # after 3 max retries
+
             revokeTask.delay(self.request.id , service.id) 
         
         else:

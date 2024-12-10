@@ -4,6 +4,11 @@ from django.db import models
 from Business.models import BusinessUnit , SubBusinessUnit
 from django.utils import timezone
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class MonitoredAPI(models.Model):
     METHOD_TYPE_CHOICES = [
@@ -37,6 +42,7 @@ class MonitoredAPI(models.Model):
     # owner
     recipientDl = models.JSONField(null = False , blank = False)
     createdBy = models.EmailField(null = True , blank = True)
+    teamsChannelWebhookURL = models.TextField(default = os.getenv('TEAMS_CHANNEL_WEBHOOK_URL'))
 
     taskId = models.ForeignKey(PeriodicTask, on_delete=models.SET_NULL, blank=True, null=True)
 

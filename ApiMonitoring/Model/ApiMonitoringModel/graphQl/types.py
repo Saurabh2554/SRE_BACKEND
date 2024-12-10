@@ -108,4 +108,5 @@ class MonitoredApiInput(graphene.InputObjectType):
     requestBody = graphene.String()
     recipientDl = graphene.String()
     createdBy = graphene.String()
+    teamsChannelWebhookURL = graphene.String()
 

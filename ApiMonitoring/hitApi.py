@@ -26,7 +26,6 @@ def handle_response(response, start_time, end_time):
             delimiter = "\n"
             errors = []
             if isinstance(parsed_response, dict):
-                print("inside dict block")
                 errors = parsed_response.get('errors', [])
             
             

@@ -2,8 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
-from celery.beat import crontab
-import json
+
 
 # Create a crontab schedule if needed
 

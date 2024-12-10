@@ -1,3 +1,5 @@
+
+
 import graphene
 from .types import MoniterApiType 
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI 
@@ -49,7 +51,8 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
     'requestBody' : input.requestBody,
     'recipientDl': input.recipientDl,
     'createdBy': input.createdBy,
-    'isApiActive':True
+    'isApiActive':True,
+    'teamsChannelWebhookURL':input.teamsChannelWebhookURL
     }
     return monitored_api_data
 

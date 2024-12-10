@@ -47,7 +47,7 @@ class Query(graphene.ObjectType):
             if methodType.upper() in ['GET', 'POST']:
                 if headers:
                     headers = json.loads(headers)  
-
+                print(requestBody,"request body, request Body")
                 result = hit_api(apiUrl, methodType, headers, requestBody)    
             else:
                 raise GraphQLError("Unsupported Method type. Use 'GET' or 'POST'.")

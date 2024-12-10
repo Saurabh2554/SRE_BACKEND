@@ -9,11 +9,7 @@ import smtplib
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import requests
-import os
 import json
-from adaptivecards.adaptivecard import AdaptiveCard
-from adaptivecards.elements import TextBlock
-from adaptivecards.containers import Column, ColumnSet, Container
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.db.models import Q
 
@@ -135,7 +131,7 @@ def resolve_metrics(self, info):
 
         latest_timestamp = filtered_metrices.last().timestamp if filtered_metrices.exists() else None
         timestamp_12_hours_before = latest_timestamp - timedelta(hours=12) if latest_timestamp else None
-        print(latest_timestamp, " ", timestamp_12_hours_before ," hhhhhhhhhhhhhhhhhhhhhhh")
+        print(latest_timestamp, "printing values ", timestamp_12_hours_before)
         if hasattr(info.context , 'from_date') and info.context.from_date is not None:  
           query_conditions &=  Q(timestamp__gte=info.context.from_date)  
 
@@ -241,7 +237,7 @@ def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage 
 def send_email(service, context, cc_email):
     subject = "API Monitoring Task Failed"
     from_email = settings.EMAIL_HOST_USER
-    to_email = ['rjnsaurabh143@gmail.com', 'rumartime02@gmail.com']
+    to_email = [] #'rjnsaurabh143@gmail.com', 'rumartime02@gmail.com'
 
 
     html_content = render_to_string('emails/notification_email.html', context)
@@ -268,7 +264,7 @@ def send_email(service, context, cc_email):
     except Exception as e:
         print(f"An unexpected error occurred while sending email: {str(e)}")
    
-def SendNotificationOnTeams(context):
+def SendNotificationOnTeams(teamsChannelWebhookURL,context):
     try:
         adaptiveCardJson = {
     
@@ -419,7 +415,7 @@ def SendNotificationOnTeams(context):
         headers = {
             'Content-Type':'application/json'
         }
-        response = requests.post(os.getenv('TEAMS_CHANNEL_WEBHOOK_URL'), headers=headers, data = json.dumps(adaptiveCardJson))
+        response = requests.post(teamsChannelWebhookURL, headers=headers, data = json.dumps(adaptiveCardJson))
         response.raise_for_status()
     except Exception as e:
         print(f"error sending notification on team: {e}")    
