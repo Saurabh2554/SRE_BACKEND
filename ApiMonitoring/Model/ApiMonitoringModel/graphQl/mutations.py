@@ -53,13 +53,14 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
     'createdBy': input.createdBy,
     'isApiActive':True,
     }
-    if input.maxRetries is not None:
+    if input.maxRetries:
         monitored_api_data['maxRetries'] = input.maxRetries
-    if input.retryAfter is not None:
+    if input.retryAfter:
         monitored_api_data['retryAfter'] = input.retryAfter
-    if input.maxRetries is not None:
+    if input.maxRetries:
         monitored_api_data['maxRetries'] = input.maxRetries
-    if input.teamsChannelWebhookURL is not None:
+    if input.teamsChannelWebhookURL:
+        print("teams testing")
         monitored_api_data['teamsChannelWebhookURL'] = input.teamsChannelWebhookURL
 
     return monitored_api_data

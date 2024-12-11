@@ -12,7 +12,7 @@ import requests
 import json
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.db.models import Q
-
+from dateutil.relativedelta import relativedelta
 
 def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
@@ -125,29 +125,38 @@ def calculateMetrices(apiMetrices, query_name):
     except Exception as e:
         raise GraphQLError(f"Unknown error occured!")
 
+def timeUnitOperations(timeRange,timeUnit):
+    time_operations = {
+        "hours": lambda: relativedelta(hours=timeRange),
+        "months": lambda: relativedelta(months=timeRange),
+    }
+
+    if timeUnit in time_operations:
+        return time_operations.get(timeUnit)
+
+    return None
+
 def resolve_metrics(self, info):
-        filtered_metrices = APIMetrics.objects.filter(api=self).order_by('timestamp')
+        filtered_metrics = APIMetrics.objects.filter(api=self).order_by('timestamp')
         query_conditions = Q()
+        latest_timestamp = None
+        past_timestamp = None
 
-        latest_timestamp = filtered_metrices.last().timestamp if filtered_metrices.exists() else None
-        timestamp_12_hours_before = latest_timestamp - timedelta(hours=12) if latest_timestamp else None
-        print(latest_timestamp, "printing values ", timestamp_12_hours_before)
-        if hasattr(info.context , 'from_date') and info.context.from_date is not None:  
-          query_conditions &=  Q(timestamp__gte=info.context.from_date)  
+        if hasattr(info.context , 'timeRange'):
+            latest_timestamp = filtered_metrics.last().timestamp if filtered_metrics.exists() else None
+            lambda_func = timeUnitOperations(info.context.timeRange,info.context.timeUnit)
+            if lambda_func:
+              past_timestamp = latest_timestamp - lambda_func() if latest_timestamp else None
+            else:
+                raise GraphQLError("wrong time unit given!")
 
-        if hasattr(info.context , 'to_date') and info.context.to_date is not None:  
-          query_conditions &=  Q(timestamp__lte=info.context.to_date)
-        
-        if hasattr(info.context , 'from_date') and info.context.from_date is None: 
-          if timestamp_12_hours_before is not None:
-                query_conditions &=  Q(timestamp__gte=timestamp_12_hours_before)  
 
-        if hasattr(info.context , 'to_date') and info.context.to_date is None: 
-          if latest_timestamp is not None:
-                query_conditions &=  Q(timestamp__lte=latest_timestamp) 
+        if latest_timestamp is not None and past_timestamp is not None:
+            query_conditions &=  Q(timestamp__lte=latest_timestamp)
+            query_conditions &= Q(timestamp__gte=past_timestamp)
 
-        filtered_metrices = filtered_metrices.filter( query_conditions )
-        metrics = calculateMetrices(filtered_metrices, info.field_name)
+        filtered_metrics = filtered_metrics.filter( query_conditions )
+        metrics = calculateMetrices(filtered_metrics, info.field_name)
         return metrics
 
 def SendEmailNotification(serviceId):

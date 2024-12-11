@@ -87,11 +87,10 @@ def revokeTask(taskId, serviceId):
     except Exception as ex:
         raise GraphQLError(f"{ex}")
         
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True, )
 def monitorApiTask(self, serviceId):
     try: 
-        service = get_service(serviceId) 
-        print(service.requestBody, "body body bodu=y")
+        service = get_service(serviceId)
         result = hit_api(service.apiUrl, service.methodType, service.headers, service.requestBody)
 
         apiMetrices = APIMetrics.objects.create(
@@ -105,8 +104,8 @@ def monitorApiTask(self, serviceId):
             responseSize = result['response_size']
         )
 
-        apiMetrices = APIMetrics.objects.filter(api=service)
-        context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
+        # apiMetrices = APIMetrics.objects.filter(api=service)
+        # context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)
         # send_metrics_update(context)
         print(result)
         if result['success']:
@@ -114,15 +113,15 @@ def monitorApiTask(self, serviceId):
         else:
             raise Retry("API call was not successful, retrying...") 
 
-    except (Retry) as ex:
+    except Retry as ex:
       try:
-        if self.request.retries >= self.max_retries: # after 3 max retries
+        if self.request.retries >= service.maxRetries:
 
             revokeTask.delay(self.request.id , service.id) 
         
         else:
           SendNotification.delay(service.id, self.request.retries)
-          retry_delay =   60 * (2 ** self.request.retries)
+          retry_delay =   service.retryAfter
           raise self.retry(exc =ex, countdown = retry_delay) 
 
       except Exception as notification_error:
