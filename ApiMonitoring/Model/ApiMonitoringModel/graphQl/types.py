@@ -97,16 +97,19 @@ class ApiMetricesType(DjangoObjectType):
     
 #Monitored  Api input values
 class MonitoredApiInput(graphene.InputObjectType):
-    businessUnit = graphene.UUID()
-    subBusinessUnit = graphene.UUID()
-    apiName = graphene.String()    
-    apiUrl = graphene.String()  
-    apiCallInterval = graphene.Int()  
-    expectedResponseTime = graphene.Int()  
-    headers = graphene.String() 
-    methodType = graphene.String()
-    requestBody = graphene.String()
-    recipientDl = graphene.String()
-    createdBy = graphene.String()
-    teamsChannelWebhookURL = graphene.String()
+    businessUnit = graphene.UUID(required=True)
+    subBusinessUnit = graphene.UUID(required=True)
+    apiName = graphene.String(required=True)
+    apiUrl = graphene.String(required=True)
+    apiCallInterval = graphene.Int(required=True)
+    expectedResponseTime = graphene.Int(required=True)
+    headers = graphene.String(required=True)
+    methodType = graphene.String(required=True)
+    requestBody = graphene.String(required=True)
+    recipientDl = graphene.String(required=True)
+    createdBy = graphene.String(required=True)
+    maxRetries = graphene.Int()
+    retryAfter = graphene.Int()
+    teamsChannelWebhookURL = graphene.String()  # Not required
+
 
