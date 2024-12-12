@@ -9,14 +9,10 @@ import smtplib
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 import requests
-import os
 import json
-from adaptivecards.adaptivecard import AdaptiveCard
-from adaptivecards.elements import TextBlock
-from adaptivecards.containers import Column, ColumnSet, Container
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.db.models import Q
-
+from dateutil.relativedelta import relativedelta
 
 def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
@@ -129,29 +125,38 @@ def calculateMetrices(apiMetrices, query_name):
     except Exception as e:
         raise GraphQLError(f"Unknown error occured!")
 
+def timeUnitOperations(timeRange,timeUnit):
+    time_operations = {
+        "hours": lambda: relativedelta(hours=timeRange),
+        "months": lambda: relativedelta(months=timeRange),
+    }
+
+    if timeUnit in time_operations:
+        return time_operations.get(timeUnit)
+
+    return None
+
 def resolve_metrics(self, info):
-        filtered_metrices = APIMetrics.objects.filter(api=self).order_by('timestamp')
+        filtered_metrics = APIMetrics.objects.filter(api=self).order_by('timestamp')
         query_conditions = Q()
+        latest_timestamp = None
+        past_timestamp = None
 
-        latest_timestamp = filtered_metrices.last().timestamp if filtered_metrices.exists() else None
-        timestamp_12_hours_before = latest_timestamp - timedelta(hours=12) if latest_timestamp else None
-        print(latest_timestamp, " ", timestamp_12_hours_before ," hhhhhhhhhhhhhhhhhhhhhhh")
-        if hasattr(info.context , 'from_date') and info.context.from_date is not None:  
-          query_conditions &=  Q(timestamp__gte=info.context.from_date)  
+        if hasattr(info.context , 'timeRange'):
+            latest_timestamp = filtered_metrics.last().timestamp if filtered_metrics.exists() else None
+            lambda_func = timeUnitOperations(info.context.timeRange,info.context.timeUnit)
+            if lambda_func:
+              past_timestamp = latest_timestamp - lambda_func() if latest_timestamp else None
+            else:
+                raise GraphQLError("wrong time unit given!")
 
-        if hasattr(info.context , 'to_date') and info.context.to_date is not None:  
-          query_conditions &=  Q(timestamp__lte=info.context.to_date)
-        
-        if hasattr(info.context , 'from_date') and info.context.from_date is None: 
-          if timestamp_12_hours_before is not None:
-                query_conditions &=  Q(timestamp__gte=timestamp_12_hours_before)  
 
-        if hasattr(info.context , 'to_date') and info.context.to_date is None: 
-          if latest_timestamp is not None:
-                query_conditions &=  Q(timestamp__lte=latest_timestamp) 
+        if latest_timestamp is not None and past_timestamp is not None:
+            query_conditions &=  Q(timestamp__lte=latest_timestamp)
+            query_conditions &= Q(timestamp__gte=past_timestamp)
 
-        filtered_metrices = filtered_metrices.filter( query_conditions )
-        metrics = calculateMetrices(filtered_metrices, info.field_name)
+        filtered_metrics = filtered_metrics.filter( query_conditions )
+        metrics = calculateMetrices(filtered_metrics, info.field_name)
         return metrics
 
 def SendEmailNotification(serviceId):
@@ -241,7 +246,7 @@ def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage 
 def send_email(service, context, cc_email):
     subject = "API Monitoring Task Failed"
     from_email = settings.EMAIL_HOST_USER
-    to_email = ['rjnsaurabh143@gmail.com', 'rumartime02@gmail.com']
+    to_email = [] #'rjnsaurabh143@gmail.com', 'rumartime02@gmail.com'
 
 
     html_content = render_to_string('emails/notification_email.html', context)
@@ -268,7 +273,7 @@ def send_email(service, context, cc_email):
     except Exception as e:
         print(f"An unexpected error occurred while sending email: {str(e)}")
    
-def SendNotificationOnTeams(context):
+def SendNotificationOnTeams(teamsChannelWebhookURL,context):
     try:
         adaptiveCardJson = {
     
@@ -419,7 +424,7 @@ def SendNotificationOnTeams(context):
         headers = {
             'Content-Type':'application/json'
         }
-        response = requests.post(os.getenv('TEAMS_CHANNEL_WEBHOOK_URL'), headers=headers, data = json.dumps(adaptiveCardJson))
+        response = requests.post(teamsChannelWebhookURL, headers=headers, data = json.dumps(adaptiveCardJson))
         response.raise_for_status()
     except Exception as e:
         print(f"error sending notification on team: {e}")    

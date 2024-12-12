@@ -1,3 +1,5 @@
+
+
 import graphene
 from .types import MoniterApiType 
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI 
@@ -49,8 +51,18 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
     'requestBody' : input.requestBody,
     'recipientDl': input.recipientDl,
     'createdBy': input.createdBy,
-    'isApiActive':True
+    'isApiActive':True,
     }
+    if input.maxRetries:
+        monitored_api_data['maxRetries'] = input.maxRetries
+    if input.retryAfter:
+        monitored_api_data['retryAfter'] = input.retryAfter
+    if input.maxRetries:
+        monitored_api_data['maxRetries'] = input.maxRetries
+    if input.teamsChannelWebhookURL:
+        print("teams testing")
+        monitored_api_data['teamsChannelWebhookURL'] = input.teamsChannelWebhookURL
+
     return monitored_api_data
 
 # Monitor a new Api

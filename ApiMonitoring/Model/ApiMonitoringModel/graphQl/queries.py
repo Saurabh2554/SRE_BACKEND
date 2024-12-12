@@ -6,7 +6,7 @@ from graphql import GraphQLError
 import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
-
+import requests
 
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
@@ -18,6 +18,10 @@ class Query(graphene.ObjectType):
         requestBody = graphene.String(),
         headers = graphene.String()
     )
+    validate_teams_channel = graphene.Field(
+        validateApiResponse,
+        channelUrl=graphene.String(required=True),
+    )
 
     get_all_metrices = graphene.List(
         ApiMetricesType, 
@@ -27,7 +31,8 @@ class Query(graphene.ObjectType):
         from_date = graphene.DateTime(), 
         to_date = graphene.DateTime(),
         searchParam = graphene.String(),
-        
+        timeRange = graphene.Int(),
+        timeUnit = graphene.String()
         )
     
     get_service_by_id = graphene.Field(
@@ -47,7 +52,7 @@ class Query(graphene.ObjectType):
             if methodType.upper() in ['GET', 'POST']:
                 if headers:
                     headers = json.loads(headers)  
-
+                print(requestBody,"request body, request Body")
                 result = hit_api(apiUrl, methodType, headers, requestBody)    
             else:
                 raise GraphQLError("Unsupported Method type. Use 'GET' or 'POST'.")
@@ -58,18 +63,36 @@ class Query(graphene.ObjectType):
           raise GraphQLError(f"Invalid Header format:")                        
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
-        
-    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None, searchParam = ""):
+
+    def resolve_validate_teams_channel(self, info, channelUrl):
+        try:
+            response = None
+            headers = {
+                'Content-Type': 'application/json'
+            }
+
+            response = requests.post(channelUrl, headers=headers, data=json.dumps({"text": "Test message from Postman"}))
+            print(response.json())
+            if(response.status_code>=400 and response.status_code<=500):
+                return validateApiResponse(status=response.status_code, success=False,
+                                       message='InValid')
+
+            return validateApiResponse(status=response.status_code, success=True,
+                                       message='Valid')
+
+        except Exception as e:
+            return validateApiResponse(status=400, success=False,
+                                       message='InValid')
+
+    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None, searchParam = "",timeRange = 12,timeUnit = 'hours'):
         try:
             monitoredApiResponse = None 
             query_conditions = Q()
             
             if apiMonitoringId:  
               monitoredApiResponse = MonitoredAPI.objects.filter(id=apiMonitoringId)
-              info.context.from_date = from_date
-              info.context.to_date = to_date
-              from_date = None
-              to_date = None
+              info.context.timeRange = timeRange
+              info.context.timeUnit = timeUnit
 
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = MonitoredAPI.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
