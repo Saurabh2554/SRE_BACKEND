@@ -82,10 +82,7 @@ def calculateMetrices(apiMetrices, query_name):
             response_size_per_metrices = list(apiMetrices.values_list('responseSize', flat=True))
  
         if query_name == 'avg_first_byte_time':
-            # print('f_b_time',first_byte_time)
             first_byte_time = list(apiMetrices.values_list('firstByteTime', flat=True))
-            print('f_b_time',first_byte_time[0])
-            print('TImeZone : ',first_byte_time[0].timestamp())
  
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
             for apiMetric in apiMetrices:
@@ -151,7 +148,6 @@ def resolve_metrics(self, info):
 
         filtered_metrices = filtered_metrices.filter( query_conditions )
         metrics = calculateMetrices(filtered_metrices, info.field_name)
-        print("Avg. metrics First Byte Time : ",metrics['avg_first_byte_time'])
         return metrics
 
 def SendEmailNotification(serviceId):

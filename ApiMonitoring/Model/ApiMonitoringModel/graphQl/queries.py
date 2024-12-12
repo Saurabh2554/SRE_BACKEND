@@ -31,7 +31,8 @@ class Query(graphene.ObjectType):
         from_date = graphene.DateTime(), 
         to_date = graphene.DateTime(),
         searchParam = graphene.String(),
-        
+        timeRange = graphene.Int(),
+        timeUnit = graphene.String()
         )
     
     get_service_by_id = graphene.Field(
@@ -83,17 +84,15 @@ class Query(graphene.ObjectType):
             return validateApiResponse(status=400, success=False,
                                        message='InValid')
 
-    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None, searchParam = ""):
+    def resolve_get_all_metrices(self, info, businessUnit = None, subBusinessUnit = None, apiMonitoringId = None, from_date = None, to_date= None, searchParam = "",timeRange = 12,timeUnit = 'hours'):
         try:
             monitoredApiResponse = None 
             query_conditions = Q()
             
             if apiMonitoringId:  
               monitoredApiResponse = MonitoredAPI.objects.filter(id=apiMonitoringId)
-              info.context.from_date = from_date
-              info.context.to_date = to_date
-              from_date = None
-              to_date = None
+              info.context.timeRange = timeRange
+              info.context.timeUnit = timeUnit
 
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = MonitoredAPI.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
