@@ -73,13 +73,11 @@ def hit_api(api_url, method_type='GET', headers=None, payload=None):
 
         if headers:       
             headers_dict = {header["key"]: header["value"] for header in headers if header.get("key") and header.get("value")}
-            for header in headers: 
-                if header.get("value").lower() :
-                    if 'json' in header.get("value"):
-
-                        payload = json.loads(payload)
-                        print("Payload JSON body : ", payload)
-
+            for header in headers:
+                if header.get("value") and 'json' in header.get("value").lower() and payload :
+                    payload = json.loads(payload)
+                    
+                        
         if method_type.upper() in ["GET", "POST"]:
             start_time = timezone.now()
             response = getattr(requests, method_type.lower())(api_url, data = payload, headers=headers_dict)
