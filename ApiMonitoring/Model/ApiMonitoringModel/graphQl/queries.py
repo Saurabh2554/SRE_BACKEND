@@ -52,7 +52,7 @@ class Query(graphene.ObjectType):
             if methodType.upper() in ['GET', 'POST']:
                 if headers:
                     headers = json.loads(headers)  
-                print(requestBody,"request body, request Body")
+
                 result = hit_api(apiUrl, methodType, headers, requestBody)    
             else:
                 raise GraphQLError("Unsupported Method type. Use 'GET' or 'POST'.")
@@ -72,7 +72,7 @@ class Query(graphene.ObjectType):
             }
 
             response = requests.post(channelUrl, headers=headers, data=json.dumps({"text": "Test message from Postman"}))
-            print(response.json())
+
             if(response.status_code>=400 and response.status_code<=500):
                 return validateApiResponse(status=response.status_code, success=False,
                                        message='InValid')
