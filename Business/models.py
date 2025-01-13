@@ -8,7 +8,6 @@ class BusinessUnit(models.Model):
     businessUnitName = models.CharField(max_length = 50 , blank=False,null = False)
     businessUnitDescription = models.CharField(max_length = 100,blank=False,null = False)
     businessUnitDl = models.EmailField(blank=False, null=False)
-    createdBy = models.EmailField(blank=False, null=False)
 
     def __str__(self) ->str:
         return self.businessUnitName
@@ -21,7 +20,6 @@ class SubBusinessUnit(models.Model):
     subBusinessUnitDescription = models.CharField(max_length = 100,blank= False,null=False)
     subBusinessUnitDl = models.EmailField(blank=False, null=False)
     businessUnit = models.ForeignKey(BusinessUnit ,on_delete = models.CASCADE)
-    createdBy = models.EmailField(blank=False, null=False)
 
     def __str__(self) ->str:
         return self.subBusinessUnitName    

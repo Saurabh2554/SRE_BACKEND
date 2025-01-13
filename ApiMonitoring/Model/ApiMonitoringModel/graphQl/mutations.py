@@ -91,6 +91,7 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
             taskResponse = CreatePeriodicTask(input.apiName, input.apiCallInterval, newMonitoredApi.id)
+            print(taskResponse,"ttttttttttt")
             newMonitoredApi.taskId = taskResponse
             periodicMonitoring.delay(newMonitoredApi.id)
 

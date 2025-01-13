@@ -72,7 +72,7 @@ def hit_api(api_url, method_type='GET', headers=None, payload=None):
         response = None
         headers_dict = {}
 
-        if headers:       
+        if headers:
             headers_dict = {header["key"]: header["value"] for header in headers if header.get("key") and header.get("value")}
             for header in headers:
                 if header.get("value") and 'json' in header.get("value").lower() and payload and not isinstance(json.loads(payload), dict):

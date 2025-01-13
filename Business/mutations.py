@@ -3,65 +3,83 @@ from .types import BusinessUnitType , SubBusinessUnitType
 from .models import BusinessUnit , SubBusinessUnit
 from graphql import GraphQLError
 
+class ValidationError(Exception):
+    pass
+
+def validatelength(Name, Description):
+    if Name and len(Name)>50:
+        raise ValidationError("Name should be less than 50 char.")
+    if Description and len(Description)>100:
+        raise ValidationError("Description should be less than 50 char.")
+
 # Create a business unit
 class BusinessUnitCreateMutation(graphene.Mutation):
-            class Arguments:
-                businessUnitName = graphene.String(required = True)
-                businessUnitDescription = graphene.String(required = True)
-                businessUnitDl = graphene.String(required = True)
-                createdBy = graphene.String(required = True)
+    class Arguments:
+        businessUnitName = graphene.String(required = True)
+        businessUnitDescription = graphene.String(required = True)
+        businessUnitDl = graphene.String(required = True)
 
-           
-            businessUnit = graphene.Field(BusinessUnitType)
-            success = graphene.Boolean()
-            message = graphene.String()
+    businessUnit = graphene.Field(BusinessUnitType)
+    success = graphene.Boolean()
+    message = graphene.String()
 
-            def mutate(self, info, businessUnitName, businessUnitDescription,businessUnitDl,createdBy):
-             try:
+    def mutate(self, info, businessUnitName, businessUnitDescription,businessUnitDl):
+     try:
 
-                businessUnit = BusinessUnit.objects.filter(businessUnitName__iexact=f'{businessUnitName}')
-                
-                if businessUnit.exists():
-                    raise GraphQLError("Business with the same name already exist")
-                     
-                else:
-                    businessUnit = BusinessUnit.objects.create (
-                    businessUnitName=businessUnitName, 
-                    businessUnitDescription=businessUnitDescription,
-                    businessUnitDl = businessUnitDl,
-                    createdBy = createdBy
-                    )
-                    return BusinessUnitCreateMutation(businessUnit,success = True , message = "Business unit created")    
-             except Exception as e:
-                raise GraphQLError(f"{str(e)}")
+        businessUnit = BusinessUnit.objects.filter(businessUnitName__iexact=f'{businessUnitName}')
+
+        if businessUnit.exists():
+            raise ValidationError("Business with the same name already exist")
+
+        validatelength(businessUnitName,businessUnitDescription)
+
+        businessUnit = BusinessUnit.objects.create (
+        businessUnitName=businessUnitName,
+        businessUnitDescription=businessUnitDescription,
+        businessUnitDl = businessUnitDl,
+        )
+        return BusinessUnitCreateMutation(businessUnit,success = True , message = "Business unit created")
+
+     except ValidationError as ve:
+         raise GraphQLError(str(ve))
+     except Exception as e:
+        raise GraphQLError(f"{str(e)}")
                   
              
 #Update a Business Unit 
 class BusinessUnitUpdateMutation(graphene.Mutation):
         id = graphene.UUID(required=True)
-        businessUnitDescription = graphene.String(required = True)
-        businessUnitDl = graphene.String(required = True)  
+        businessUnitDescription = graphene.String()
+        businessUnitDl = graphene.String()
 
         businessUnit = graphene.Field(BusinessUnitType)
         success = graphene.Boolean()
         message = graphene.String()
-        def mutate(self, info, id, businessUnitDescription, businessUnitDl):
+        def mutate(self, info, id, businessUnitDescription=None, businessUnitDl=None):
             try:
                 if id is not None:
                     businessUnit = BusinessUnit.objects.get(pk=id)
 
                     if businessUnit is not None:
-                        businessUnit.businessUnitDescription = businessUnitDescription
-                        businessUnit.businessUnitDl = businessUnitDl
 
+                        if businessUnitDescription:
+                          validatelength(None, businessUnitDescription)
+                          businessUnit.businessUnitDescription = businessUnitDescription
+                        if businessUnitDl:
+                          businessUnit.businessUnitDl = businessUnitDl
+
+                        businessUnit.save()
                         return BusinessUnitUpdateMutation(businessUnit,success = True , message = "Business unit updated")
                     else:
-                        raise GraphQLError("Business Unit with the given id does not exist")
+                        raise ValidationError("Business Unit does not exist!")
                     
                 else:
-                    raise GraphQLError("Id field is required")
+                    raise ValidationError("Id field is required")
+
+            except ValidationError as ve:
+              raise GraphQLError(str(ve))
             except Exception as e:
-                 raise GraphQLError(f"{str(e)}")
+              raise GraphQLError(f"{str(e)}")
 
 #Create Sub business Unit
 class SubBusinessUnitCreateMutation(graphene.Mutation):
@@ -69,58 +87,68 @@ class SubBusinessUnitCreateMutation(graphene.Mutation):
         subBusinessUnitName = graphene.String(required = True)
         subBusinessUnitDescription = graphene.String(required = True)
         subBusinessUnitDl = graphene.String(required = True)
-        createdBy = graphene.String(required = True)
         businessUnit = graphene.UUID(required = True)
 
     subBusinessUnit = graphene.Field(SubBusinessUnitType)
     success = graphene.Boolean()
     message = graphene.String()
-    def mutate(self, info, subBusinessUnitName, subBusinessUnitDescription,subBusinessUnitDl,createdBy, businessUnit):
+    def mutate(self, info, subBusinessUnitName, subBusinessUnitDescription,subBusinessUnitDl, businessUnit):
          try:
             subBusinessUnit = SubBusinessUnit.objects.filter(subBusinessUnitName__iexact=f'{subBusinessUnitName}')
             businessUnitObj = BusinessUnit.objects.get(pk=businessUnit)   
 
             if subBusinessUnit.exists():
-                raise GraphQLError("Sub Business unit with the same name already exist")
+                raise ValidationError("Sub Business unit already exist!")
             
-            elif businessUnitObj is None:
-                raise GraphQLError("Incorrect Business unit given")
-            
-            else:
-             subBusinessUnit = SubBusinessUnit.objects.create (
-                subBusinessUnitName=subBusinessUnitName, 
+            if businessUnitObj is None:
+                raise ValidationError("Incorrect Business unit given")
+
+            validatelength(subBusinessUnitName, subBusinessUnitDescription)
+
+            subBusinessUnit = SubBusinessUnit.objects.create (
+                subBusinessUnitName=subBusinessUnitName,
                 subBusinessUnitDescription=subBusinessUnitDescription,
                 subBusinessUnitDl = subBusinessUnitDl,
-                createdBy = createdBy,
                 businessUnit = businessUnitObj
-                )
-             return SubBusinessUnitCreateMutation(subBusinessUnit=subBusinessUnit,success = True , message = "Sub Business unit created")
+            )
+
+            return SubBusinessUnitCreateMutation(subBusinessUnit=subBusinessUnit,success = True , message = "Sub Business unit created")
+
+         except ValidationError as ve:
+             raise GraphQLError(str(ve))
          except Exception as e:
-              raise GraphQLError(f"{str(e)}")
+             raise GraphQLError(f"{str(e)}")
 
 #Update a Business Unit 
 class SubBusinessUnitUpdateMutation(graphene.Mutation):
      id = graphene.UUID(required=True)
-     subBusinessUnitDescription = graphene.String(required = True)
-     subBusinessUnitDl = graphene.String(required = True)  
+     subBusinessUnitDescription = graphene.String()
+     subBusinessUnitDl = graphene.String()
 
      subBusinessUnit = graphene.Field(SubBusinessUnitType)
      success = graphene.Boolean()
      message = graphene.String()
-     def mutate(self, info, id, subBusinessUnitDescription, subBusinessUnitDl):
+     def mutate(self, info, id, subBusinessUnitDescription = None, subBusinessUnitDl = None):
         try:
              if id is not None:
                   subBusinessUnit = SubBusinessUnit.objects.get(pk=id)
 
                   if subBusinessUnit is not None:
-                       subBusinessUnit.subBusinessUnitDescription = subBusinessUnitDescription
-                       subBusinessUnit.subBusinessUnitDl = subBusinessUnitDl
+                      if subBusinessUnitDescription:
+                         validatelength(None, subBusinessUnitDescription)
+                         subBusinessUnit.subBusinessUnitDescription = subBusinessUnitDescription
+                      if subBusinessUnitDl:
+                         subBusinessUnit.subBusinessUnitDl = subBusinessUnitDl
 
-                       return SubBusinessUnitUpdateMutation(subBusinessUnit , success = True , mesage = "Sub business unit updated")
+                      subBusinessUnit.save()
+                      return SubBusinessUnitUpdateMutation(subBusinessUnit , success = True , mesage = "Sub business unit updated")
                   else:
-                       raise GraphQLError("Sub Business unit with the given id does not exist")
+                       raise ValidationError("Sub Business unit does not exist")
                   
              else:
-                raise GraphQLError("Id field is required")
+                raise ValidationError("Id field is required")
+
+        except ValidationError as ve:
+            raise GraphQLError(str(ve))
         except Exception as e:
             raise GraphQLError(f"{str(e)}")     

@@ -43,7 +43,6 @@ class Query(graphene.ObjectType):
     def resolve_method_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
-     
 
     def resolve_validate_api(self, info, apiUrl, methodType, requestBody=None, headers=None):
         try:
@@ -60,24 +59,25 @@ class Query(graphene.ObjectType):
             return validateApiResponse(status = result['status'], success = result['success'], message = result['error_message'])
           
         except json.JSONDecodeError as e:
-          raise GraphQLError(f"Invalid Header format:")                        
+          raise GraphQLError("Invalid Header format:")
         except Exception as e:
           raise GraphQLError(f"{str(e)}")
 
     def resolve_validate_teams_channel(self, info, channelUrl):
         try:
             response = None
-            headers = {
-                'Content-Type': 'application/json'
-            }
 
-            response = requests.post(channelUrl, headers=headers, data=json.dumps({"text": "Test message from Postman"}))
+            response = requests.post(channelUrl, json={"text": "Test"})
 
-            if(response.status_code>=400 and response.status_code<=500):
+            if(response.status_code>=400 and response.status_code<500):
                 return validateApiResponse(status=response.status_code, success=False,
                                        message='InValid')
 
-            return validateApiResponse(status=response.status_code, success=True,
+            elif(response.status_code>=500):
+                return validateApiResponse(status=response.status_code, success=False,
+                                           message='Server Error! URL not available')
+            else:
+                return validateApiResponse(status=response.status_code, success=True,
                                        message='Valid')
 
         except Exception as e:
@@ -97,7 +97,7 @@ class Query(graphene.ObjectType):
             elif businessUnit and subBusinessUnit:
               monitoredApiResponse = MonitoredAPI.objects.filter(businessUnit=businessUnit, subBusinessUnit=subBusinessUnit)
             else:
-                raise GraphQLError("Please provide either the apiMonitoringId or both businessUnit and subBusinessUnit.")
+                raise GraphQLError("Please provide either the apiMonitoringId or both (businessUnit and subBusinessUnit).")
 
             if monitoredApiResponse.exists():
                 if from_date: 
@@ -110,8 +110,8 @@ class Query(graphene.ObjectType):
                 monitoredApiResponse = monitoredApiResponse.filter( query_conditions )   
 
             else:
-                raise GraphQLError("No any api is set to monitored ever") 
-  
+                raise GraphQLError("No any api is set to monitored ever")
+
             return monitoredApiResponse
 
         except Exception as e:
@@ -121,6 +121,7 @@ class Query(graphene.ObjectType):
        try:
           monitoredApi = get_service(serviceId)
           return monitoredApi
+
        except MonitoredAPI.DoesNotExist:
             raise GraphQLError("Service Not Found!")
        except Exception as e:

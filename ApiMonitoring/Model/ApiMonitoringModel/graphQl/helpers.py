@@ -12,7 +12,7 @@ import requests
 import json
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 from django.db.models import Q
-
+from django.core.exceptions import ObjectDoesNotExist
 
 def calculatePercentile(percentile_rank, response_time_dict_list):
     # Number of response times
@@ -38,9 +38,7 @@ def calculatePercentile(percentile_rank, response_time_dict_list):
 
 def calculateMetrices(apiMetrices, query_name):
     try:
-        
         total_no_of_requests = apiMetrices.count()
-        
 
         if total_no_of_requests == 0:
             raise GraphQLError("No data available for the given API.")
@@ -60,8 +58,7 @@ def calculateMetrices(apiMetrices, query_name):
         if query_name in ['availability_uptime', 'downtime']:
             total_uptime_requests = apiMetrices.filter(statusCode__gte=200, statusCode__lt=400).count()
             availability_uptime = round((total_uptime_requests / total_no_of_requests) * 100, 2)
-              
- 
+
         if query_name in ['success_count', 'success_rates']:
             total_successful_requests = apiMetrices.filter(statusCode=200).count()
  
@@ -82,7 +79,10 @@ def calculateMetrices(apiMetrices, query_name):
             response_size_per_metrices = list(apiMetrices.values_list('responseSize', flat=True))
  
         if query_name == 'avg_first_byte_time':
-            first_byte_time = list(apiMetrices.values_list('firstByteTime', flat=True))
+            for metric in apiMetrices:
+                if metric.firstByteTime and metric.requestStartTime:
+                    timeGap = (metric.firstByteTime-metric.requestStartTime)
+                    first_byte_time.append(timeGap)
  
         if query_name in ['response_time', 'percentile_50', 'percentile_90', 'percentile_99']:
             for apiMetric in apiMetrices:
@@ -112,7 +112,7 @@ def calculateMetrices(apiMetrices, query_name):
             'success_count': total_successful_requests,
             'error_count': total_failed_requests,
             'avg_response_size': round(sum(response_size_per_metrices) / len(response_size_per_metrices), 2) if len(response_size_per_metrices)>0 else 0,
-            'avg_first_byte_time': round(sum(fbt.timestamp() for fbt in first_byte_time) / len(first_byte_time), 2) if len(first_byte_time)>0 else 0,
+            'avg_first_byte_time': round(sum(first_byte_time,timedelta(0)).total_seconds() / len(first_byte_time), 2) if len(first_byte_time)>0 else 0,
             'response_time': response_time_dict_list,
             'percentile_50': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_50' else None,
             'percentile_90': {'curr_percentile_res_time': round(float(str(currentPercentile)), 3), 'percentage_diff': round(float(str(percentageDiff)),3)} if query_name == 'percentile_90' else None,
@@ -123,32 +123,50 @@ def calculateMetrices(apiMetrices, query_name):
     except GraphQLError as gql_error:
         raise gql_error
     except Exception as e:
-        raise GraphQLError(f"Unknown error occured!")
+        raise GraphQLError(f"Unknown error occurred!")
 
 def resolve_metrics(self, info):
-        filtered_metrices = APIMetrics.objects.filter(api=self).order_by('timestamp')
-        query_conditions = Q()
+    try:
+        if not hasattr(self, '_cached_filtered_metrics'):
+            timestamp_hours_before = None
+            latest_timestamp = None
 
-        latest_timestamp = filtered_metrices.last().timestamp if filtered_metrices.exists() else None
-        timestamp_12_hours_before = latest_timestamp - timedelta(hours=12) if latest_timestamp else None
-        print(latest_timestamp, "printing values ", timestamp_12_hours_before)
-        if hasattr(info.context , 'from_date') and info.context.from_date is not None:  
-          query_conditions &=  Q(timestamp__gte=info.context.from_date)  
+            filtered_metrics = APIMetrics.objects.filter(api=self).order_by('timestamp')
+            query_conditions = Q()
 
-        if hasattr(info.context , 'to_date') and info.context.to_date is not None:  
-          query_conditions &=  Q(timestamp__lte=info.context.to_date)
-        
-        if hasattr(info.context , 'from_date') and info.context.from_date is None: 
-          if timestamp_12_hours_before is not None:
-                query_conditions &=  Q(timestamp__gte=timestamp_12_hours_before)  
+            if filtered_metrics.exists():
+                if hasattr(info.context, 'timeRange') and hasattr(info.context, 'timeUnit'):
+                    latest_timestamp = filtered_metrics.last().timestamp
+                    if latest_timestamp:
+                        delta = timedelta(
+                            days=30 * info.context.timeRange) if info.context.timeUnit == 'months' else timedelta(
+                            hours=info.context.timeRange)
+                        timestamp_hours_before = latest_timestamp - delta
 
-        if hasattr(info.context , 'to_date') and info.context.to_date is None: 
-          if latest_timestamp is not None:
-                query_conditions &=  Q(timestamp__lte=latest_timestamp) 
 
-        filtered_metrices = filtered_metrices.filter( query_conditions )
-        metrics = calculateMetrices(filtered_metrices, info.field_name)
-        return metrics
+                if hasattr(info.context , 'from_date') and info.context.from_date:
+                  query_conditions &=  Q(timestamp__gte=info.context.from_date)
+
+                if hasattr(info.context , 'to_date') and info.context.to_date:
+                  query_conditions &=  Q(timestamp__lte=info.context.to_date)
+
+                if not hasattr(info.context , 'from_date') and not hasattr(info.context , 'to_date') :
+                  if timestamp_hours_before:
+                    query_conditions &=  Q(timestamp__gte=timestamp_hours_before)
+
+                  if latest_timestamp:
+                     query_conditions &=  Q(timestamp__lte=latest_timestamp)
+
+
+                filtered_metrics = filtered_metrics.filter( query_conditions )
+
+                self._cached_filtered_metrics = filtered_metrics.filter(query_conditions)
+            else:
+              raise ObjectDoesNotExist("Object does not exist!")
+
+        return calculateMetrices(self._cached_filtered_metrics, info.field_name)
+    except Exception as e:
+        pass
 
 def SendEmailNotification(serviceId):
     try:
@@ -442,7 +460,11 @@ def UpdateTask(taskId, enabled = True, min = None):
 
 def CreatePeriodicTask(apiName, min, serviceId):
     try:
-        schedule, created = CrontabSchedule.objects.get_or_create(minute=f'*/{min}')  
+        schedule_qs = CrontabSchedule.objects.filter(minute=f'*/{min}')
+        if schedule_qs.exists():
+            schedule = schedule_qs.first()  # Or handle multiple results
+        else:
+            schedule = CrontabSchedule.objects.create(minute=f'*/{min}')
         new_task = PeriodicTask.objects.create(
             name=f'my_periodic_task_{apiName}',
             task='ApiMonitoring.tasks.periodicMonitoring',
