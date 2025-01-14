@@ -11,9 +11,9 @@ class APIMetrics(models.Model):
     requestStartTime = models.DateTimeField(default = timezone.now)
     firstByteTime = models.DateTimeField(default = timezone.now)
 
-   
     responseTime = models.FloatField(null=True, blank=True)  # Time taken to get a response
     success = models.BooleanField(default=False)  # Whether the request was successful
+    degraded = models.BooleanField(default=False)
     errorMessage = models.TextField(null=True, blank=True)  # Error message if any
     statusCode = models.IntegerField(null=True, blank=True)
     responseSize = models.IntegerField(default = 233)
