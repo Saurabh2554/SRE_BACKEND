@@ -2,12 +2,26 @@ import graphene
 from graphene_django import DjangoObjectType
 from  ..apiMonitorModels import MonitoredAPI 
 from .helpers import calculateMetrices, resolve_metrics
-
+from ..assertionAndLimitModels import AssertionAndLimit
+from ..schedulingAndAlertingModels import SchedulingAndAlerting
 
 class MoniterApiType(DjangoObjectType):
     class Meta:
       model = MonitoredAPI
       fields = "__all__"
+
+class AssertionAndLimitType(graphene.InputObjectType):
+    expectedResponseTime = graphene.Int(required = True)
+    degradedResponseTime = graphene.Int()
+    failedResponseTime = graphene.Int()
+
+class SchedulingAndAlertingType(graphene.InputObjectType):
+    apiCallInterval = graphene.Int()
+    recipientDl = graphene.String(required=True)
+    createdBy = graphene.String()
+    maxRetries = graphene.Int()
+    retryAfter = graphene.Int()
+    teamsChannelWebhookURL = graphene.String()
 
 class methodTypeChoice(graphene.ObjectType):
     key = graphene.String()  
@@ -16,6 +30,14 @@ class methodTypeChoice(graphene.ObjectType):
 class percentileResponseType(graphene.ObjectType):
    curr_percentile_res_time = graphene.Float()
    percentage_diff = graphene.Float()
+
+class SchedulingAndAlertingQueryType(DjangoObjectType):
+    class Meta:
+        model = SchedulingAndAlerting
+
+class AssertionAndLimitQueryType(DjangoObjectType):
+    class Meta:
+        model = AssertionAndLimit
 
 class responseTimeType(graphene.ObjectType):
     timestamp = graphene.DateTime()
@@ -30,7 +52,7 @@ class validateApiResponse(graphene.ObjectType):
 class ApiMetricesType(DjangoObjectType):
     class Meta:
         model = MonitoredAPI
-        fields = ('id', 'apiName','methodType', 'apiUrl','expectedResponseTime','isApiActive')
+        fields = ('id', 'apiName', 'methodType', 'apiUrl', 'isApiActive','assertionAndLimit','schedulingAndAlerting')
 
     availability_uptime = graphene.Float(name='availability_uptime')
     success_rates = graphene.Float(name='success_rates')
@@ -47,7 +69,6 @@ class ApiMetricesType(DjangoObjectType):
     percentile_90 = graphene.Field(percentileResponseType, name='percentile_90')  
     percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')  
     last_Error_Occurred = graphene.DateTime(name='last_Error_Occurred')
-
 
     def resolve_availability_uptime(self, info):
         return resolve_metrics(self,info)['availability_uptime']
@@ -101,15 +122,10 @@ class MonitoredApiInput(graphene.InputObjectType):
     subBusinessUnit = graphene.UUID(required=True)
     apiName = graphene.String(required=True)
     apiUrl = graphene.String(required=True)
-    apiCallInterval = graphene.Int(required=True)
-    expectedResponseTime = graphene.Int(required=True)
+    assertionAndLimit = graphene.Field(AssertionAndLimitType,required=True)
+    schedulingAndAlerting = graphene.Field(SchedulingAndAlertingType,required=True)
     headers = graphene.String(required=True)
     methodType = graphene.String(required=True)
     requestBody = graphene.String(required=True)
-    recipientDl = graphene.String(required=True)
-    createdBy = graphene.String(required=True)
-    maxRetries = graphene.Int()
-    retryAfter = graphene.Int()
-    teamsChannelWebhookURL = graphene.String()  # Not required
 
 

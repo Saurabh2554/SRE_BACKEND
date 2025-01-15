@@ -1,5 +1,7 @@
 import graphene
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
+from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
+from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.hitApi import hit_api
 from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
 from graphql import GraphQLError
@@ -7,6 +9,8 @@ import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 import requests
+from django.db.models import Prefetch
+
 
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
@@ -107,8 +111,7 @@ class Query(graphene.ObjectType):
                 
                 query_conditions &= (Q(apiName__icontains=searchParam) | Q(apiUrl__icontains=searchParam))
 
-                monitoredApiResponse = monitoredApiResponse.filter( query_conditions )   
-
+                monitoredApiResponse = monitoredApiResponse.filter( query_conditions )
             else:
                 raise GraphQLError("No any api is set to monitored ever")
 
