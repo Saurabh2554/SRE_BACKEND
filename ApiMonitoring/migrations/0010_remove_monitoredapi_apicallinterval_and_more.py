@@ -12,34 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='apiCallInterval',
-        ),
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='createdBy',
-        ),
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='expectedResponseTime',
-        ),
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='maxRetries',
-        ),
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='recipientDl',
-        ),
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='retryAfter',
-        ),
-        migrations.RemoveField(
-            model_name='monitoredapi',
-            name='teamsChannelWebhookURL',
-        ),
         migrations.AddField(
             model_name='apimetrics',
             name='degraded',

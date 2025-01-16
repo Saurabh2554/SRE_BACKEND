@@ -13,26 +13,26 @@ def migrate_data(apps, schema_editor):
         AssertionAndLimit.objects.create(
             api=monitor,
         )
+        if hasattr(monitor, 'apiCallInterval') and hasattr(monitor, 'maxRetries') and hasattr(monitor, 'retryAfter') and hasattr(monitor, 'recipientDl') and hasattr(monitor, 'createdBy') and hasattr(monitor, 'teamsChannelWebhookURL'):
+            required_fields = [
+                monitor.apiCallInterval,
+                monitor.maxRetries,
+                monitor.retryAfter,
+                monitor.recipientDl,
+                monitor.createdBy,
+                monitor.teamsChannelWebhookURL,
+            ]
 
-        required_fields = [
-            monitor.apiCallInterval,
-            monitor.maxRetries,
-            monitor.retryAfter,
-            monitor.recipientDl,
-            monitor.createdBy,
-            monitor.teamsChannelWebhookURL,
-        ]
-
-        if all(field is not None for field in required_fields):
-            SchedulingAndAlerting.objects.create(
-                api=monitor,
-                apiCallInterval=monitor.apiCallInterval,
-                maxRetries = monitor.maxRetries,
-                retryAfter = monitor.retryAfter,
-                recipientDl = monitor.recipientDl,
-                createdBy = monitor.createdBy,
-                teamsChannelWebhookURL = monitor.teamsChannelWebhookURL
-            )
+            if all(field is not None for field in required_fields):
+                SchedulingAndAlerting.objects.create(
+                    api=monitor,
+                    apiCallInterval=monitor.apiCallInterval,
+                    maxRetries = monitor.maxRetries,
+                    retryAfter = monitor.retryAfter,
+                    recipientDl = monitor.recipientDl,
+                    createdBy = monitor.createdBy,
+                    teamsChannelWebhookURL = monitor.teamsChannelWebhookURL
+                )
 
 
 class Migration(migrations.Migration):
