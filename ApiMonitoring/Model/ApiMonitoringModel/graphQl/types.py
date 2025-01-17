@@ -11,7 +11,6 @@ class MoniterApiType(DjangoObjectType):
       fields = "__all__"
 
 class AssertionAndLimitType(graphene.InputObjectType):
-    expectedResponseTime = graphene.Int(required = True)
     degradedResponseTime = graphene.Int()
     failedResponseTime = graphene.Int()
 
