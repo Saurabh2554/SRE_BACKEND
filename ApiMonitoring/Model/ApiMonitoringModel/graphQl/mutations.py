@@ -133,12 +133,17 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
                     if input.schedulingAndAlerting.teamsChannelWebhookURL:
                         schedulingAndAlerting.teamsChannelWebhookURL = input.schedulingAndAlerting.teamsChannelWebhookURL  
 
+                    schedulingAndAlerting.save()
+                    
+
                 if input.assertionAndLimit:
                     if input.assertionAndLimit.degradedResponseTime:
                         assertionAndLimit.degradedResponseTime = input.assertionAndLimit.degradedResponseTime
 
                     if input.assertionAndLimit.failedResponseTime:
                         assertionAndLimit.failedResponseTime = input.assertionAndLimit.failedResponseTime
+
+                    assertionAndLimit.save()
 
                 if input.headers:
                     monitoredApi.headers = input.headers  
@@ -152,8 +157,8 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
                 periodicMonitoring.delay(id)
             
             monitoredApi.save()
-            assertionAndLimit.save()
-            schedulingAndAlerting.save()
+            
+            
 
 
             return ApiMonitorUpdateMutation(
