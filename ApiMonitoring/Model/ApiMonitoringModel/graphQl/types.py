@@ -16,7 +16,7 @@ class AssertionAndLimitType(graphene.InputObjectType):
 
 class SchedulingAndAlertingType(graphene.InputObjectType):
     apiCallInterval = graphene.Int()
-    recipientDl = graphene.String(required=True)
+    recipientDl = graphene.String()
     createdBy = graphene.String()
     maxRetries = graphene.Int()
     retryAfter = graphene.Int()

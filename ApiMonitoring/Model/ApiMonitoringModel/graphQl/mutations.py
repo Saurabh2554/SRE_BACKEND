@@ -53,6 +53,8 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
 
     return monitored_api_data
 
+
+
 # Monitor a new Api
 class ApiMonitorCreateMutation(graphene.Mutation):
     class Arguments:
@@ -67,6 +69,10 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
 
             existingMonitorAPIs = CheckExistingApi(input = input)
+
+            if input.schedulingAndAlerting and not(hasattr(input.schedulingAndAlerting,'recipientDl') and input.schedulingAndAlerting.recipientDl):
+                raise GraphQLError("receipentDL is required in scheduling And Alerting")
+
 
             if existingMonitorAPIs is not None :
                 raise GraphQLError("Service with the same name already exist!")
