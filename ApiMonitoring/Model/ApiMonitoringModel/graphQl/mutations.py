@@ -175,6 +175,13 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
 
         except MonitoredAPI.DoesNotExist:
             raise GraphQLError("API to be updated not found")
+        
+        except AssertionAndLimit.DoesNotExist:
+            raise GraphQLError("AssertionAndLimit API fields to be updated not found")
+        
+        except SchedulingAndAlerting.DoesNotExist:
+            raise GraphQLError("SchedulingAndAlerting API fields to be updated not found")
+        
         except Exception as e:
             raise GraphQLError(f"Error updating API: {str(e)}")
 
