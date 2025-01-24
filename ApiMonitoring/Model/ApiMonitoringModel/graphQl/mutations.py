@@ -2,15 +2,16 @@
 
 import graphene
 from .types import MoniterApiType 
-from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI 
+from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
+from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
+from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 from  Business.models import BusinessUnit , SubBusinessUnit
-# from  ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from  graphql import GraphQLError
 from  ApiMonitoring.tasks import monitorApiTask, revokeTask, periodicMonitoring
 from .types import MonitoredApiInput
 import json
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import UpdateTask, CreatePeriodicTask, get_service
-
+from django.db import transaction
 
 def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
     try:
@@ -35,33 +36,20 @@ def CheckExistingApi(input):
         ).first()
 
   except Exception as e:
-      raise GraphQLError(f"{e}")    
-    
-    
+      raise GraphQLError(f"{e}")
+
+
 def CreateMonitorInput(businessUnit, subBusinessUnit, input):
     monitored_api_data = {
     'businessUnit': businessUnit,
     'subBusinessUnit': subBusinessUnit,
     'apiName': input.apiName,
     'apiUrl': input.apiUrl,
-    'apiCallInterval': input.apiCallInterval,
-    'expectedResponseTime': input.expectedResponseTime,
     'headers': input.headers,
     'methodType' : input.methodType,
     'requestBody' : input.requestBody,
-    'recipientDl': input.recipientDl,
-    'createdBy': input.createdBy,
     'isApiActive':True,
     }
-    if input.maxRetries:
-        monitored_api_data['maxRetries'] = input.maxRetries
-    if input.retryAfter:
-        monitored_api_data['retryAfter'] = input.retryAfter
-    if input.maxRetries:
-        monitored_api_data['maxRetries'] = input.maxRetries
-    if input.teamsChannelWebhookURL:
-        print("teams testing")
-        monitored_api_data['teamsChannelWebhookURL'] = input.teamsChannelWebhookURL
 
     return monitored_api_data
 
@@ -83,19 +71,26 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             if existingMonitorAPIs is not None :
                 raise GraphQLError("Service with the same name already exist!")
 
-            if input.headers:
-                input.headers = json.loads(input.headers)  
+            if hasattr(input,'headers') and input.headers:
+                input.headers = json.loads(input.headers)
 
             monitorApiInput = CreateMonitorInput(businessUnit, subbusinessUnit, input)
-            
-            newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
-            taskResponse = CreatePeriodicTask(input.apiName, input.apiCallInterval, newMonitoredApi.id)
-            newMonitoredApi.taskId = taskResponse
+            with transaction.atomic():
+                newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
+
+                input.assertionAndLimit['api'] = newMonitoredApi
+                input.schedulingAndAlerting['api'] = newMonitoredApi
+
+                AssertionAndLimit.objects.create(**input.assertionAndLimit)
+                SchedulingAndAlerting.objects.create(**input.schedulingAndAlerting)
+
+                taskResponse = CreatePeriodicTask(input.apiName, input.schedulingAndAlerting.apiCallInterval, newMonitoredApi.id)
+
+                newMonitoredApi.taskId = taskResponse
+                newMonitoredApi.save()
+
             periodicMonitoring.delay(newMonitoredApi.id)
-
-            newMonitoredApi.save()
-
             return ApiMonitorCreateMutation(monitoredApi = newMonitoredApi, success = True , message = "Api monitoring started")    
        
         except json.JSONDecodeError as e:

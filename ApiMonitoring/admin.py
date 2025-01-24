@@ -2,8 +2,11 @@ from django.contrib import admin
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
-
+from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
+from ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 
 admin.site.register(Authentication)
 admin.site.register(MonitoredAPI)
 admin.site.register(APIMetrics)
+admin.site.register(AssertionAndLimit)
+admin.site.register(SchedulingAndAlerting)

@@ -15,7 +15,7 @@ http_error_messages = {
     412: "Precondition Failed",
     413: "Payload Too Large",
     414: "URI Too Long",
-    415: "Unsupported Media Type",
+    415: "Unsupported Media/Content Type",
     416: "Range Not Satisfiable",
     417: "Expectation Failed",
     418: "I'm a teapot",

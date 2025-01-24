@@ -4,11 +4,11 @@ from .models import BusinessUnit , SubBusinessUnit
 class BusinessUnitType(DjangoObjectType):
     class Meta:
       model = BusinessUnit
-      fields = "__all__"
+      fields = ["id", "businessUnitName","businessUnitDescription"]
 
 class SubBusinessUnitType(DjangoObjectType):
     class Meta:
       model = SubBusinessUnit
-      fields = "__all__"
+      fields = ["id", "subBusinessUnitName","subBusinessUnitDescription","businessUnit"]
 
      

@@ -2,10 +2,9 @@ import logging
 from celery import shared_task
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
-from Business.models import BusinessUnit, SubBusinessUnit
+from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.hitApi import hit_api
 from graphql import GraphQLError
-from celery import current_task
 from celery.result import AsyncResult
 from celery.app.control import Control
 from celery.exceptions import Retry
@@ -13,6 +12,7 @@ from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service, 
 from mySite.celery import app
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +89,24 @@ def revokeTask(taskId, serviceId):
         
 @shared_task(bind=True, )
 def monitorApiTask(self, serviceId):
-    try: 
+    global failed
+    global degraded
+    try:
         service = get_service(serviceId)
         result = hit_api(service.apiUrl, service.methodType, service.headers, service.requestBody)
+
+        assertion = AssertionAndLimit.objects.get(api=service)
+
+        if result['response_time'] >= assertion.failedResponseTime:
+          failed = True
+          degraded = False
+
+        elif result['response_time'] >= assertion.degradedResponseTime and result['response_time'] < assertion.degradedResponseTime:
+            degraded = True
+            failed = False
+        else:
+            degraded = False
+            failed = False
 
         apiMetrices = APIMetrics.objects.create(
             api = service,
@@ -101,7 +116,10 @@ def monitorApiTask(self, serviceId):
             errorMessage = result['error_message'],
             requestStartTime = result['start_time'],
             firstByteTime = result['end_time'],
-            responseSize = result['response_size']
+            responseSize = result['response_size'],
+            failed = failed,
+            degraded = degraded
+
         )
 
         # apiMetrices = APIMetrics.objects.filter(api=service)
@@ -128,8 +146,12 @@ def monitorApiTask(self, serviceId):
         print(f"inside nested exception................... {notification_error}")  
 
     except ValueError as ex:
-       print(ex)    
+       print(ex)
 
+    except AssertionAndLimit.DoesNotExist:
+        print("Assertion Does not exist")
+    except AssertionAndLimit.MultipleObjectsReturned:
+        print('expecting single object...')
     except Exception as ex:
         print(f"Error executing tasks : {ex}")
        

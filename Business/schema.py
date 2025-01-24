@@ -7,55 +7,37 @@ from graphql import GraphQLError
      
                 
 class Query(graphene.ObjectType):
-    all_sub_business_unit = graphene.List(SubBusinessUnitType )
-    sub_business_unit = graphene.Field(SubBusinessUnitType , id = graphene.UUID(required = True))
-    all_business_unit = graphene.List(BusinessUnitType)
-    business_unit = graphene.Field(BusinessUnitType , id = graphene.UUID(required = True))
+    sub_business_unit = graphene.Field(SubBusinessUnitType , id = graphene.UUID())
+    business_unit = graphene.List(BusinessUnitType , id = graphene.UUID())
     sub_business_unit_per_business_unit = graphene.List(SubBusinessUnitType , id = graphene.UUID(required = True))
 
 #Get all business unit objects
-    def resolve_all_business_unit(root , info):
+    def resolve_business_unit(root , info, **kwargs):
         try:
-           return BusinessUnit.objects.all()
-        except Exception as e:
-            return None   
- 
-#Retreive single business unit object based on id
-    def resolve_business_unit(root , info,**kwargs):
-        try:
-            id = kwargs.get('id')
-            if id is not None:
-             return BusinessUnit.objects.get(pk = id)
-            else:
-              raise GraphQLError("Id field is required") 
+           BusinessUnitId = kwargs.get('id')
+
+           if BusinessUnitId:
+               return BusinessUnit.objects.filter(id = BusinessUnitId)
+           else:
+             return BusinessUnit.objects.all()
         except Exception as e:
             raise GraphQLError(f"{str(e)}")
 
 #Get all sub-business unit objects
-    def resolve_all_sub_business_unit(root , info):
+    def resolve_sub_business_unit(root , info):
         try:
+
             return SubBusinessUnit.objects.all()
         except Exception as e:
             raise GraphQLError(f"{str(e)}")
-          
-#Retreive single sub-business unit object based on id
-    def resolve_sub_business_unit(root , info,**kwargs):
-        try:
-            id = kwargs.get('id')
-            if id is not None:
-              return SubBusinessUnit.objects.get(pk = id)
-            else:
-              raise GraphQLError("Id field is required") 
-        except Exception as e:
-            raise GraphQLError(f"{str(e)}")
 
 
-# Retreive all sub business unit which comes under a particular business unit---
+# Retrieve all sub business unit which comes under a particular business unit---
     def resolve_sub_business_unit_per_business_unit(root , info , **kwargs):
         try:
-            id = kwargs.get('id')
-            if id is not None:
-              return SubBusinessUnit.objects.filter(businessUnit=f'{id}')
+            BusinessUnitId = kwargs.get('id')
+            if BusinessUnitId is not None:
+              return SubBusinessUnit.objects.filter(businessUnit=f'{BusinessUnitId}')
             else:
               raise GraphQLError("Id field is required") 
         except Exception as e:

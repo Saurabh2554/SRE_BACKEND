@@ -17,9 +17,10 @@ def handle_response(response, start_time, end_time):
         content_type = response.headers.get('Content-Type', '').lower()
         
         if response.status_code >= 400:
-            message = f'{response.reason} :  {response.status_code}' 
-            if not (response.reason):
-                message  =  message = f"{response.status_code} : {http_error_messages.get(response.status_code, 'Unknown Error Occurred!')}"     
+            if response.reason:
+              message = f'{response.reason} :  {response.status_code}'
+            else :
+              message  =  message = f"{response.status_code} : {http_error_messages.get(response.status_code, 'Unknown Error Occurred!')}"
 
         if 'json' in content_type:
             parsed_response = response.json()
@@ -73,6 +74,10 @@ def hit_api(api_url, method_type='GET', headers=None, payload=None):
 
         if headers:
             headers_dict = {header["key"]: header["value"] for header in headers if header.get("key") and header.get("value")}
+            for header in headers:
+                if header.get("value") and 'json' in header.get("value").lower() and payload and not isinstance(json.loads(payload), dict):
+                    payload = json.loads(payload)
+
 
         if method_type.upper() in ["GET", "POST"]:
             start_time = timezone.now()
@@ -83,6 +88,7 @@ def hit_api(api_url, method_type='GET', headers=None, payload=None):
             raise ValueError("Unsupported Method type. Use 'GET' or 'POST'.")
         return handle_response(response, start_time, end_time)
 
+    except json.JSONDecodeError as json_decode:
+        raise GraphQLError(f"Given Json in content-type! Body is not a valid json string")
     except Exception as EX:
-        print(f"Some error occurred :: {EX} ")
         raise GraphQLError(f"Some error occurred :: {EX} ")
