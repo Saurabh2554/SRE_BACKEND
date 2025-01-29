@@ -2,6 +2,7 @@ import math
 from graphql import GraphQLError
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
+from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from datetime import timedelta 
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
@@ -229,6 +230,14 @@ def SendEmailNotification(serviceId):
      
 def get_service(serviceId):
   return MonitoredAPI.objects.select_related('businessUnit', 'subBusinessUnit',).get(pk=serviceId)
+
+def get_metrices(metriceId):
+    return APIMetrics.objects.select_related('api').get(pk=metriceId)
+
+def get_assertions_for_service(serviceId):
+    assertions = AssertionAndLimit.objects.filter(api__id=serviceId)   
+    return assertions
+
 
 def PrepareContext(apiMetrices, apiName, apiUrl, APIMonitorId=None,errorMessage = None):
     # for record in apiMetrices.values():

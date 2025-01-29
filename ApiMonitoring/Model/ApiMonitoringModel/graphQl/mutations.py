@@ -1,6 +1,7 @@
 
 
 import graphene
+import re
 from .types import MoniterApiType, AssertionAndLimitQueryType, SchedulingAndAlertingQueryType
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
@@ -53,10 +54,88 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
 
     return monitored_api_data
 
+def is_valid_json_path(path):
+    """
+    Validates if the input string is a valid JSON path.
+
+    A valid JSON path must follow these rules:
+    - Starts with '$' (the root element in JSONPath).
+    - Supports dot notation (e.g., $.key) or bracket notation (e.g., $['key']).
+    - Array indices are valid (e.g., $['key'][0] or $.key[0]).
+    - No invalid characters or sequences.
+
+    Args:
+        path (str): The input string to validate.
+
+    Returns:
+        bool: True if the path is a valid JSON path, False otherwise.
+    """
+    try:
+        # Regex for JSON path with array index support
+        json_path_pattern = r"^\$((\.[a-zA-Z_][a-zA-Z0-9_]*)|(\[['\"].+?['\"]\])|(\[\d+\]))*$"
+        
+        # Validate path with regex
+        if not isinstance(path, str):
+            return False
+        if re.match(json_path_pattern, path):
+            return True
+        return False
+    except Exception:
+        return False
+
+
+
+def checkValidAssertion(assertionLimit,newMonitoredApi):
+    # replace 
+    VALID_OPERATORS = {
+    'Status Code': ['equals', 'not equals', 'selected', 'not selected'],
+    'Header': ['equals', 'not equals', 'is empty', 'is not empty', 'greater than', 'less than', 'contains', 'not contains'],
+    'JSON Body': ['equals', 'not equals', 'is empty', 'is not empty', 'greater than', 'less than', 'contains', 'not contains', 'has key', 'has value', 'not has value'],
+    'Response Time': ['equals', 'not equals', 'selected', 'not selected']
+    }
+
+    ALLOW_PROPERTY = {
+    'Header': True,  
+    'JSON Body': True,  
+    'Status Code': False,  
+    'Response Time': False  
+    }
+
+    source = assertionLimit.get('source')
+    property_value = assertionLimit.get('property')
+    operator = assertionLimit.get('operator')
+
+    existing_assertion = AssertionAndLimit.objects.filter(
+                                        api=newMonitoredApi,
+                                        source=source,
+                                        property=property_value,
+                                        operator=operator
+                                        ).first()
+
+    if existing_assertion:
+         raise GraphQLError(f"An assertion with the same source, property, and operator already exists for this API.")
+    
+
+    if source not in VALID_OPERATORS:
+        raise GraphQLError(f"Invalid source: {source}. Allowed sources are: {', '.join(VALID_OPERATORS.keys())}.")
+    
+    if operator not in VALID_OPERATORS[source]:
+        raise GraphQLError(f"Invalid operator: {operator} for source: {source}. Allowed operaotrs are: {', '.join(VALID_OPERATORS[source])}.")
+    
+    if not ALLOW_PROPERTY[source] and property_value :
+        raise GraphQLError(f"Property is not allowed for source: {source}. Please remove the property field. ")
+    
+    if ALLOW_PROPERTY[source] and not property_value:
+         raise GraphQLError(f"Property is required for source: {source}. Please provide a valid property.")
+    
+    if source == 'JSON Body' and property_value and not is_valid_json_path(property_value):
+        raise GraphQLError(f"Invalid property for JSON Body. Only JSON path is allowed, no regex.")
+    
 
 
 # Monitor a new Api
 class ApiMonitorCreateMutation(graphene.Mutation):
+
     class Arguments:
         input = MonitoredApiInput(required = True)
     
@@ -85,7 +164,15 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             with transaction.atomic():
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
 
-                input.assertionAndLimit['api'] = newMonitoredApi
+                for assertionLimit in input.assertionAndLimit:
+                    assertionLimit['api'] = newMonitoredApi
+
+                    checkValidAssertion(assertionLimit,newMonitoredApi)
+                    
+                    AssertionAndLimit.objects.create(**assertionLimit)
+
+                
+                # input.assertionAndLimit['api'] = newMonitoredApi
                 input.schedulingAndAlerting['api'] = newMonitoredApi
 
                 AssertionAndLimit.objects.create(**input.assertionAndLimit)
@@ -105,83 +192,83 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             raise GraphQLError(f"{str(e)}")
                   
                   
-class ApiMonitorUpdateMutation(graphene.Mutation):
-    class Arguments:
-        id = graphene.UUID(required=True)  
-        isApiActive = graphene.Boolean()
-        input = MonitoredApiUpdateInput() 
+# class ApiMonitorUpdateMutation(graphene.Mutation):
+#     class Arguments:
+#         id = graphene.UUID(required=True)  
+#         isApiActive = graphene.Boolean()
+#         input = MonitoredApiUpdateInput() 
 
-    monitoredApi = graphene.Field(MoniterApiType)
-    assertionAndLimit = graphene.Field(AssertionAndLimitQueryType)
-    schedulingAndAlerting = graphene.Field(SchedulingAndAlertingQueryType)
-    success = graphene.Boolean()
-    message = graphene.String()
+#     monitoredApi = graphene.Field(MoniterApiType)
+#     assertionAndLimit = graphene.Field(AssertionAndLimitQueryType)
+#     schedulingAndAlerting = graphene.Field(SchedulingAndAlertingQueryType)
+#     success = graphene.Boolean()
+#     message = graphene.String()
 
-    def mutate(self, info, id, isApiActive, input = None):
-        try:
-            # Fetch the existing MonitoredAPI by its ID
-            monitoredApi = get_service(id)
-            assertionAndLimit = AssertionAndLimit.objects.get(api=id)
-            schedulingAndAlerting = SchedulingAndAlerting.objects.get(api=id)
-            message = None
+#     def mutate(self, info, id, isApiActive, input = None):
+#         try:
+#             # Fetch the existing MonitoredAPI by its ID
+#             monitoredApi = get_service(id)
+#             assertionAndLimit = AssertionAndLimit.objects.get(api=id)
+#             schedulingAndAlerting = SchedulingAndAlerting.objects.get(api=id)
+#             message = None
 
-            if input is not None:
-                if input.schedulingAndAlerting:
-                    if input.schedulingAndAlerting.apiCallInterval:
-                        schedulingAndAlerting.apiCallInterval = input.schedulingAndAlerting.apiCallInterval
+#             if input is not None:
+#                 if input.schedulingAndAlerting:
+#                     if input.schedulingAndAlerting.apiCallInterval:
+#                         schedulingAndAlerting.apiCallInterval = input.schedulingAndAlerting.apiCallInterval
 
-                    if input.schedulingAndAlerting.maxRetries:
-                        schedulingAndAlerting.maxRetries = input.schedulingAndAlerting.maxRetries
+#                     if input.schedulingAndAlerting.maxRetries:
+#                         schedulingAndAlerting.maxRetries = input.schedulingAndAlerting.maxRetries
                     
-                    if input.schedulingAndAlerting.retryAfter:
-                        schedulingAndAlerting.retryAfter = input.schedulingAndAlerting.retryAfter
+#                     if input.schedulingAndAlerting.retryAfter:
+#                         schedulingAndAlerting.retryAfter = input.schedulingAndAlerting.retryAfter
 
-                    if input.schedulingAndAlerting.teamsChannelWebhookURL:
-                        schedulingAndAlerting.teamsChannelWebhookURL = input.schedulingAndAlerting.teamsChannelWebhookURL  
+#                     if input.schedulingAndAlerting.teamsChannelWebhookURL:
+#                         schedulingAndAlerting.teamsChannelWebhookURL = input.schedulingAndAlerting.teamsChannelWebhookURL  
 
-                    schedulingAndAlerting.save()
+#                     schedulingAndAlerting.save()
                     
 
-                if input.assertionAndLimit:
-                    if input.assertionAndLimit.degradedResponseTime:
-                        assertionAndLimit.degradedResponseTime = input.assertionAndLimit.degradedResponseTime
+#                 # if input.assertionAndLimit:
+#                 #     if input.degradedResponseTime:
+#                 #         assertionAndLimit.degradedResponseTime = input.assertionAndLimit.degradedResponseTime
 
-                    if input.assertionAndLimit.failedResponseTime:
-                        assertionAndLimit.failedResponseTime = input.assertionAndLimit.failedResponseTime
+#                 #     if input.failedResponseTime:
+#                 #         assertionAndLimit.failedResponseTime = input.assertionAndLimit.failedResponseTime
 
-                    assertionAndLimit.save()
+#                 #     assertionAndLimit.save()
 
-                if input.headers:
-                    monitoredApi.headers = input.headers  
+#                 if input.headers:
+#                     monitoredApi.headers = input.headers  
 
-            monitoredApi.isApiActive = isApiActive
-            if monitoredApi.taskId:
-                task_id = monitoredApi.taskId.id
-                UpdateTask(task_id, monitoredApi.isApiActive, schedulingAndAlerting.apiCallInterval)
+#             monitoredApi.isApiActive = isApiActive
+#             if monitoredApi.taskId:
+#                 task_id = monitoredApi.taskId.id
+#                 UpdateTask(task_id, monitoredApi.isApiActive, schedulingAndAlerting.apiCallInterval)
             
-            if isApiActive:
-                periodicMonitoring.delay(id)
+#             if isApiActive:
+#                 periodicMonitoring.delay(id)
             
-            monitoredApi.save()
+#             monitoredApi.save()
             
             
 
 
-            return ApiMonitorUpdateMutation(
-                monitoredApi=monitoredApi,
-                success=True,
-                message= f'Service {"activated" if isApiActive else "deactivated"} ' 
-            )
+#             return ApiMonitorUpdateMutation(
+#                 monitoredApi=monitoredApi,
+#                 success=True,
+#                 message= f'Service {"activated" if isApiActive else "deactivated"} ' 
+#             )
 
-        except MonitoredAPI.DoesNotExist:
-            raise GraphQLError("API to be updated not found")
+#         except MonitoredAPI.DoesNotExist:
+#             raise GraphQLError("API to be updated not found")
         
-        except AssertionAndLimit.DoesNotExist:
-            raise GraphQLError("AssertionAndLimit API fields to be updated not found")
+#         except AssertionAndLimit.DoesNotExist:
+#             raise GraphQLError("AssertionAndLimit API fields to be updated not found")
         
-        except SchedulingAndAlerting.DoesNotExist:
-            raise GraphQLError("SchedulingAndAlerting API fields to be updated not found")
+#         except SchedulingAndAlerting.DoesNotExist:
+#             raise GraphQLError("SchedulingAndAlerting API fields to be updated not found")
         
-        except Exception as e:
-            raise GraphQLError(f"Error updating API: {str(e)}")
+#         except Exception as e:
+#             raise GraphQLError(f"Error updating API: {str(e)}")
 

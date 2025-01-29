@@ -11,8 +11,10 @@ class MoniterApiType(DjangoObjectType):
       fields = "__all__"
 
 class AssertionAndLimitType(graphene.InputObjectType):
-    degradedResponseTime = graphene.Int()
-    failedResponseTime = graphene.Int()
+    source = graphene.String()
+    property = graphene.String(required=False)  # Optional, as per the model with null=True, blank=True
+    operator = graphene.String()
+    expectedValue = graphene.String()
 
 class SchedulingAndAlertingType(graphene.InputObjectType):
     apiCallInterval = graphene.Int()
@@ -121,11 +123,14 @@ class MonitoredApiInput(graphene.InputObjectType):
     subBusinessUnit = graphene.UUID(required=True)
     apiName = graphene.String(required=True)
     apiUrl = graphene.String(required=True)
-    assertionAndLimit = graphene.Field(AssertionAndLimitType,required=True)
+    # assertionAndLimit = graphene.Field(AssertionAndLimitType,required=True)
+    assertionAndLimit = graphene.List(AssertionAndLimitType, required=True)
     schedulingAndAlerting = graphene.Field(SchedulingAndAlertingType,required=True)
     headers = graphene.String()
     methodType = graphene.String(required=True)
     requestBody = graphene.String()
+    degradedResponseTime = graphene.Int()
+    failedResponseTime = graphene.Int()
 
 class MonitoredApiUpdateInput(graphene.InputObjectType):
     assertionAndLimit = graphene.Field(AssertionAndLimitType)

@@ -28,6 +28,10 @@ class MonitoredAPI(models.Model):
     # Tracking the monitoring status
     isApiActive = models.BooleanField(default=False)  # Status if API is being monitored or not
 
+    degradedResponseTime = models.IntegerField(null=True, blank=True, help_text="Threshold in milliseconds")
+    failedResponseTime = models.IntegerField(null=True, blank=True, help_text="Threshold in milliseconds")
+
+
     # Timestamps
     createdAt = models.DateTimeField(default=timezone.now)
     
