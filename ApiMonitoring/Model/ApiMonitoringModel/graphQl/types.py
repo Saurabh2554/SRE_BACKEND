@@ -31,8 +31,9 @@ class methodTypeChoice(graphene.ObjectType):
     value = graphene.String()
 
 class sourceTypeOperatorChoice(graphene.ObjectType):
-    key = graphene.String()
-    value = graphene.List(graphene.String)
+    source = graphene.String()
+    propertyVisibility = graphene.Boolean()
+    operators = graphene.List(graphene.String)
 class percentileResponseType(graphene.ObjectType):
    curr_percentile_res_time = graphene.Float()
    percentage_diff = graphene.Float()
