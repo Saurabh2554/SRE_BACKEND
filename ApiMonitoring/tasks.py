@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import logging
 from celery import shared_task
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
@@ -170,3 +171,20 @@ def periodicMonitoring(serviceId):
     except Exception as e:
         print(f"error scheduling tasks: {e}")   
     
+=======
+from celery import shared_task
+
+@shared_task
+def add(x, y):
+    return x + y
+
+
+@shared_task
+def mul(x, y):
+    return x * y
+
+
+@shared_task
+def xsum(numbers):
+    return sum(numbers)
+>>>>>>> bdd0fb5 (Celery related changes)
