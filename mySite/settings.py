@@ -35,12 +35,8 @@ INSTALLED_APPS = [
     'graphene_django',
     'Business',
     "corsheaders",
-<<<<<<< HEAD
     "django_celery_results",
     "django_celery_beat",
-=======
-    "django_celery_results"
->>>>>>> bdd0fb5 (Celery related changes)
 
 ]
 
@@ -155,7 +151,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-<<<<<<< HEAD
 # Email configuration
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT= os.getenv('EMAIL_PORT')
@@ -172,26 +167,4 @@ CHANNEL_LAYERS = {
         },
     },
 }
-=======
-
-# Celery Configuration Options
-CELERY_TIMEZONE = 'UTC'
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
-
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'django-cache'
-
-# CELERY_BROKER_URL = 'amqp://sfuser:%23InfoSF010@rmqwrapper.data-axle.com:5671/dig'  # Change according to your RabbitMQ setup
-# # CELERY_RESULT_BACKEND = 'rpc://'  # This is optional based on your needs
-
-# CELERY_TASK_DEFAULT_EXCHANGE = 'test.sf.exchange'
-# CELERY_TASK_DEFAULT_EXCHANGE_TYPE = 'topic'
-# CELERY_TASK_DEFAULT_ROUTING_KEY = 'sf.chowner'
-# CELERY_DEFAULT_QUEUE = 'test.sf.sfadmin.chowner.queue'
-
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_RESULT_SERIALIZER = 'json'
->>>>>>> bdd0fb5 (Celery related changes)
 
