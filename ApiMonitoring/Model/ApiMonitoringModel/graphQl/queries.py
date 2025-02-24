@@ -70,7 +70,7 @@ class Query(graphene.ObjectType):
         return sourceTypeOperatorChoice(
            source=source_type, 
            propertyVisibility = ALLOW_PROPERTY.get(source_type,False),
-           operators=VALID_OPERATORS.get(source_type,[])
+           operators=VALID_OPERATORS.get(source_type,[] )
         )
             
         
