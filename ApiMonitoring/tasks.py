@@ -14,6 +14,8 @@ from mySite.celery import app
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.assertion_and_limit_helpers import checkAssertion
+
 
 logger = logging.getLogger(__name__)
 
@@ -96,18 +98,16 @@ def monitorApiTask(self, serviceId):
         service = get_service(serviceId)
         result = hit_api(service.apiUrl, service.methodType, service.headers, service.requestBody)
 
-        assertion = AssertionAndLimit.objects.get(api=service)
+        # if result['response_time'] >= service.failedResponseTime:
+        #   failed = True
+        #   degraded = False
 
-        if result['response_time'] >= assertion.failedResponseTime:
-          failed = True
-          degraded = False
-
-        elif result['response_time'] >= assertion.degradedResponseTime and result['response_time'] < assertion.degradedResponseTime:
-            degraded = True
-            failed = False
-        else:
-            degraded = False
-            failed = False
+        # elif result['response_time'] >= service.degradedResponseTime and result['response_time'] < service.degradedResponseTime:
+        #     degraded = True
+        #     failed = False
+        # else:
+        degraded = False
+        failed = False
 
         apiMetrices = APIMetrics.objects.create(
             api = service,
@@ -122,6 +122,8 @@ def monitorApiTask(self, serviceId):
             degraded = degraded
 
         )
+        checkAssertion(serviceId=serviceId,metriceId=apiMetrices.id, response=result['response_body'])
+
 
         # apiMetrices = APIMetrics.objects.filter(api=service)
         # context = PrepareContext(apiMetrices, service.apiName, service.apiUrl)

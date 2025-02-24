@@ -1,6 +1,7 @@
 
 
 import graphene
+import re
 from .types import MoniterApiType, AssertionAndLimitQueryType, SchedulingAndAlertingQueryType
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
@@ -53,10 +54,87 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
 
     return monitored_api_data
 
+def is_valid_json_path(path):
+    """
+    Validates if the input string is a valid JSON path.
+
+    A valid JSON path must follow these rules:
+    - Starts with '$' (the root element in JSONPath).
+    - Supports dot notation (e.g., $.key) or bracket notation (e.g., $['key']).
+    - Array indices are valid (e.g., $['key'][0] or $.key[0]).
+    - No invalid characters or sequences.
+
+    Args:
+        path (str): The input string to validate.
+
+    Returns:
+        bool: True if the path is a valid JSON path, False otherwise.
+    """
+    try:
+        # Regex for JSON path with array index support
+        json_path_pattern = r"^\$((\.[a-zA-Z_][a-zA-Z0-9_]*)|(\[['\"].+?['\"]\])|(\[\d+\]))*$"
+        
+        # Validate path with regex
+        if not isinstance(path, str):
+            return False
+        if re.match(json_path_pattern, path):
+            return True
+        return False
+    except Exception:
+        return False
+
+
+
+def checkValidAssertion(assertionLimit,newMonitoredApi):
+    # replace 
+    VALID_OPERATORS = {
+    'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
+    'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
+    'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains']
+    }
+
+
+    ALLOW_PROPERTY = {
+    'header': True,  
+    'json_body': True,  
+    'status_code': False
+    }
+
+    source = assertionLimit.get('source')
+    property_value = assertionLimit.get('property')
+    operator = assertionLimit.get('operator')
+
+    existing_assertion = AssertionAndLimit.objects.filter(
+                                        api=newMonitoredApi,
+                                        source=source,
+                                        property=property_value,
+                                        operator=operator
+                                        ).first()
+
+    if existing_assertion:
+         raise GraphQLError(f"An assertion with the same source, property, and operator already exists for this API.")
+    
+
+    if source not in VALID_OPERATORS:
+        raise GraphQLError(f"Invalid source: {source}. Allowed sources are: {', '.join(VALID_OPERATORS.keys())}.")
+    
+    if operator not in VALID_OPERATORS[source]:
+        raise GraphQLError(f"Invalid operator: {operator} for source: {source}. Allowed operaotrs are: {', '.join(VALID_OPERATORS[source])}.")
+    
+    if not ALLOW_PROPERTY[source] and property_value :
+        raise GraphQLError(f"Property is not allowed for source: {source}. Please remove the property field. ")
+    
+    if ALLOW_PROPERTY[source] and not property_value:
+         raise GraphQLError(f"Property is required for source: {source}. Please provide a valid property.")
+    
+    if source == 'json_body' and property_value and not is_valid_json_path(property_value):
+        raise GraphQLError(f"Invalid property for JSON Body. Only JSON path is allowed, no regex.")
+    
 
 
 # Monitor a new Api
 class ApiMonitorCreateMutation(graphene.Mutation):
+
     class Arguments:
         input = MonitoredApiInput(required = True)
     
@@ -84,11 +162,20 @@ class ApiMonitorCreateMutation(graphene.Mutation):
 
             with transaction.atomic():
                 newMonitoredApi = MonitoredAPI.objects.create(**monitorApiInput)
+                
+                assertion_limits =[]
+                for assertionLimit in input.assertionAndLimit:
+                    assertionLimit['api'] = newMonitoredApi
 
-                input.assertionAndLimit['api'] = newMonitoredApi
+                    checkValidAssertion(assertionLimit,newMonitoredApi)
+                    
+                    assertion_limits.append(AssertionAndLimit(**assertionLimit))
+
+                
+                # input.assertionAndLimit['api'] = newMonitoredApi
                 input.schedulingAndAlerting['api'] = newMonitoredApi
 
-                AssertionAndLimit.objects.create(**input.assertionAndLimit)
+                AssertionAndLimit.objects.bulk_create(assertion_limits)
                 SchedulingAndAlerting.objects.create(**input.schedulingAndAlerting)
 
                 taskResponse = CreatePeriodicTask(input.apiName, input.schedulingAndAlerting.apiCallInterval, newMonitoredApi.id)
@@ -142,14 +229,14 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
                     schedulingAndAlerting.save()
                     
 
-                if input.assertionAndLimit:
-                    if input.assertionAndLimit.degradedResponseTime:
-                        assertionAndLimit.degradedResponseTime = input.assertionAndLimit.degradedResponseTime
+                # if input.assertionAndLimit:
+                #     if input.degradedResponseTime:
+                #         assertionAndLimit.degradedResponseTime = input.assertionAndLimit.degradedResponseTime
 
-                    if input.assertionAndLimit.failedResponseTime:
-                        assertionAndLimit.failedResponseTime = input.assertionAndLimit.failedResponseTime
+                #     if input.failedResponseTime:
+                #         assertionAndLimit.failedResponseTime = input.assertionAndLimit.failedResponseTime
 
-                    assertionAndLimit.save()
+                #     assertionAndLimit.save()
 
                 if input.headers:
                     monitoredApi.headers = input.headers  

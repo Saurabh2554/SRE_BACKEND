@@ -3,7 +3,7 @@ from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAP
 from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.hitApi import hit_api
-from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
+from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType,sourceTypeOperatorChoice
 from graphql import GraphQLError
 import json
 from django.db.models import Q
@@ -14,6 +14,8 @@ from django.db.models import Prefetch
 
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
+
+    assertion_source_operator_choices = graphene.List(sourceTypeOperatorChoice)
 
     validate_api = graphene.Field(
         validateApiResponse, 
@@ -47,6 +49,21 @@ class Query(graphene.ObjectType):
     def resolve_method_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
+    
+    def resolve_assertion_source_operator_choices(self, info, **kwargs):
+        VALID_OPERATORS = {
+        'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
+        'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
+        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains']
+    }
+    
+        return [
+            sourceTypeOperatorChoice(key=key, value=value)
+            for key, value in VALID_OPERATORS.items()
+        ]
+       
+       
+    
 
     def resolve_validate_api(self, info, apiUrl, methodType, requestBody=None, headers=None):
         try:

@@ -4,6 +4,8 @@ from  ..apiMonitorModels import MonitoredAPI
 from .helpers import calculateMetrices, resolve_metrics
 from ..assertionAndLimitModels import AssertionAndLimit
 from ..schedulingAndAlertingModels import SchedulingAndAlerting
+from ..assertionAndLimitResultModels import AssertionAndLimitResult
+from ..apiMetricesModels import APIMetrics
 
 class MoniterApiType(DjangoObjectType):
     class Meta:
@@ -11,8 +13,10 @@ class MoniterApiType(DjangoObjectType):
       fields = "__all__"
 
 class AssertionAndLimitType(graphene.InputObjectType):
-    degradedResponseTime = graphene.Int()
-    failedResponseTime = graphene.Int()
+    source = graphene.String()
+    property = graphene.String(required=False)  # Optional, as per the model with null=True, blank=True
+    operator = graphene.String()
+    expectedValue = graphene.String()
 
 class SchedulingAndAlertingType(graphene.InputObjectType):
     apiCallInterval = graphene.Int()
@@ -26,6 +30,9 @@ class methodTypeChoice(graphene.ObjectType):
     key = graphene.String()  
     value = graphene.String()
 
+class sourceTypeOperatorChoice(graphene.ObjectType):
+    key = graphene.String()
+    value = graphene.List(graphene.String)
 class percentileResponseType(graphene.ObjectType):
    curr_percentile_res_time = graphene.Float()
    percentage_diff = graphene.Float()
@@ -48,6 +55,11 @@ class validateApiResponse(graphene.ObjectType):
     success = graphene.Boolean()
     message = graphene.String()
 
+class AssertionAndLimitResultType(DjangoObjectType):
+    class Meta:
+        model = AssertionAndLimitResult
+        fields = ("id", "assertion_and_limit", "apimetrics", "actual_value", "status", "timestamp")
+
 class ApiMetricesType(DjangoObjectType):
     class Meta:
         model = MonitoredAPI
@@ -68,6 +80,8 @@ class ApiMetricesType(DjangoObjectType):
     percentile_90 = graphene.Field(percentileResponseType, name='percentile_90')  
     percentile_99 = graphene.Field(percentileResponseType, name='percentile_99')  
     last_Error_Occurred = graphene.DateTime(name='last_Error_Occurred')
+
+    assertion_results = graphene.List(AssertionAndLimitResultType)
 
     def resolve_availability_uptime(self, info):
         return resolve_metrics(self,info)['availability_uptime']
@@ -113,6 +127,14 @@ class ApiMetricesType(DjangoObjectType):
 
     def resolve_last_Error_Occurred(self, info):
         return resolve_metrics(self,info)['last_Error_Occurred']
+    
+    def resolve_assertion_results(self, info):
+        api_metrics = APIMetrics.objects.filter(api=self).values_list('id', flat=True)
+
+        if not api_metrics:
+            return []
+        
+        return AssertionAndLimitResult.objects.filter(apimetrics__id__in=api_metrics)
 
     
 #Monitored  Api input values
@@ -121,11 +143,14 @@ class MonitoredApiInput(graphene.InputObjectType):
     subBusinessUnit = graphene.UUID(required=True)
     apiName = graphene.String(required=True)
     apiUrl = graphene.String(required=True)
-    assertionAndLimit = graphene.Field(AssertionAndLimitType,required=True)
+    # assertionAndLimit = graphene.Field(AssertionAndLimitType,required=True)
+    assertionAndLimit = graphene.List(AssertionAndLimitType, required=True)
     schedulingAndAlerting = graphene.Field(SchedulingAndAlertingType,required=True)
     headers = graphene.String()
     methodType = graphene.String(required=True)
     requestBody = graphene.String()
+    degradedResponseTime = graphene.Int()
+    failedResponseTime = graphene.Int()
 
 class MonitoredApiUpdateInput(graphene.InputObjectType):
     assertionAndLimit = graphene.Field(AssertionAndLimitType)
@@ -133,3 +158,6 @@ class MonitoredApiUpdateInput(graphene.InputObjectType):
     headers = graphene.String()
     methodType = graphene.String()
     requestBody = graphene.String()
+
+
+
