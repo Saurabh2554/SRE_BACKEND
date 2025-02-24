@@ -15,7 +15,10 @@ from django.db.models import Prefetch
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
 
-    assertion_source_operator_choices = graphene.List(sourceTypeOperatorChoice)
+    assertion_source_operator_choices = graphene.Field(
+       sourceTypeOperatorChoice,
+       source_type=graphene.String(required=True)
+       )
 
     validate_api = graphene.Field(
         validateApiResponse, 
@@ -50,17 +53,27 @@ class Query(graphene.ObjectType):
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
     
-    def resolve_assertion_source_operator_choices(self, info, **kwargs):
+    def resolve_assertion_source_operator_choices(self, info,source_type, **kwargs):
         VALID_OPERATORS = {
         'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
         'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
         'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains']
     }
+        
+        ALLOW_PROPERTY = {
+    'header': True,  
+    'json_body': True,  
+    'status_code': False
+    }
+
     
-        return [
-            sourceTypeOperatorChoice(key=key, value=value)
-            for key, value in VALID_OPERATORS.items()
-        ]
+        return sourceTypeOperatorChoice(
+           source=source_type, 
+           propertyVisibility = ALLOW_PROPERTY.get(source_type,False),
+           operators=VALID_OPERATORS.get(source_type,[] )
+        )
+            
+        
        
        
     
