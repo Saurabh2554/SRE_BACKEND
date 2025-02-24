@@ -1,14 +1,14 @@
 
 
 import graphene
-from .types import MoniterApiType 
+from .types import MoniterApiType, AssertionAndLimitQueryType, SchedulingAndAlertingQueryType
 from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAPI
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 from  Business.models import BusinessUnit , SubBusinessUnit
 from  graphql import GraphQLError
 from  ApiMonitoring.tasks import monitorApiTask, revokeTask, periodicMonitoring
-from .types import MonitoredApiInput
+from .types import MonitoredApiInput, MonitoredApiUpdateInput
 import json
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import UpdateTask, CreatePeriodicTask, get_service
 from django.db import transaction
@@ -53,6 +53,8 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
 
     return monitored_api_data
 
+
+
 # Monitor a new Api
 class ApiMonitorCreateMutation(graphene.Mutation):
     class Arguments:
@@ -67,6 +69,10 @@ class ApiMonitorCreateMutation(graphene.Mutation):
             businessUnit, subbusinessUnit = ExtractBusinessAndSubBusinessUnit(input.businessUnit, input.subBusinessUnit)
 
             existingMonitorAPIs = CheckExistingApi(input = input)
+
+            if input.schedulingAndAlerting and not(hasattr(input.schedulingAndAlerting,'recipientDl') and input.schedulingAndAlerting.recipientDl):
+                raise GraphQLError("receipentDL is required in scheduling And Alerting")
+
 
             if existingMonitorAPIs is not None :
                 raise GraphQLError("Service with the same name already exist!")
@@ -103,9 +109,11 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
     class Arguments:
         id = graphene.UUID(required=True)  
         isApiActive = graphene.Boolean()
-        input = MonitoredApiInput() 
+        input = MonitoredApiUpdateInput() 
 
     monitoredApi = graphene.Field(MoniterApiType)
+    assertionAndLimit = graphene.Field(AssertionAndLimitQueryType)
+    schedulingAndAlerting = graphene.Field(SchedulingAndAlertingQueryType)
     success = graphene.Boolean()
     message = graphene.String()
 
@@ -113,14 +121,35 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
         try:
             # Fetch the existing MonitoredAPI by its ID
             monitoredApi = get_service(id)
+            assertionAndLimit = AssertionAndLimit.objects.get(api=id)
+            schedulingAndAlerting = SchedulingAndAlerting.objects.get(api=id)
             message = None
 
             if input is not None:
-                if input.apiCallInterval:
-                    monitoredApi.apiCallInterval = input.apiCallInterval
+                if input.schedulingAndAlerting:
+                    if input.schedulingAndAlerting.apiCallInterval:
+                        schedulingAndAlerting.apiCallInterval = input.schedulingAndAlerting.apiCallInterval
 
-                if input.expectedResponseTime:
-                    monitoredApi.expectedResponseTime = input.expectedresponseTime
+                    if input.schedulingAndAlerting.maxRetries:
+                        schedulingAndAlerting.maxRetries = input.schedulingAndAlerting.maxRetries
+                    
+                    if input.schedulingAndAlerting.retryAfter:
+                        schedulingAndAlerting.retryAfter = input.schedulingAndAlerting.retryAfter
+
+                    if input.schedulingAndAlerting.teamsChannelWebhookURL:
+                        schedulingAndAlerting.teamsChannelWebhookURL = input.schedulingAndAlerting.teamsChannelWebhookURL  
+
+                    schedulingAndAlerting.save()
+                    
+
+                if input.assertionAndLimit:
+                    if input.assertionAndLimit.degradedResponseTime:
+                        assertionAndLimit.degradedResponseTime = input.assertionAndLimit.degradedResponseTime
+
+                    if input.assertionAndLimit.failedResponseTime:
+                        assertionAndLimit.failedResponseTime = input.assertionAndLimit.failedResponseTime
+
+                    assertionAndLimit.save()
 
                 if input.headers:
                     monitoredApi.headers = input.headers  
@@ -128,12 +157,15 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
             monitoredApi.isApiActive = isApiActive
             if monitoredApi.taskId:
                 task_id = monitoredApi.taskId.id
-                UpdateTask(task_id, monitoredApi.isApiActive, monitoredApi.apiCallInterval)
+                UpdateTask(task_id, monitoredApi.isApiActive, schedulingAndAlerting.apiCallInterval)
             
             if isApiActive:
                 periodicMonitoring.delay(id)
             
             monitoredApi.save()
+            
+            
+
 
             return ApiMonitorUpdateMutation(
                 monitoredApi=monitoredApi,
@@ -143,6 +175,13 @@ class ApiMonitorUpdateMutation(graphene.Mutation):
 
         except MonitoredAPI.DoesNotExist:
             raise GraphQLError("API to be updated not found")
+        
+        except AssertionAndLimit.DoesNotExist:
+            raise GraphQLError("AssertionAndLimit API fields to be updated not found")
+        
+        except SchedulingAndAlerting.DoesNotExist:
+            raise GraphQLError("SchedulingAndAlerting API fields to be updated not found")
+        
         except Exception as e:
             raise GraphQLError(f"Error updating API: {str(e)}")
 

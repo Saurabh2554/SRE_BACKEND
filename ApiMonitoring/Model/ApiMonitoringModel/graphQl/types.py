@@ -16,7 +16,7 @@ class AssertionAndLimitType(graphene.InputObjectType):
 
 class SchedulingAndAlertingType(graphene.InputObjectType):
     apiCallInterval = graphene.Int()
-    recipientDl = graphene.String(required=True)
+    recipientDl = graphene.String()
     createdBy = graphene.String()
     maxRetries = graphene.Int()
     retryAfter = graphene.Int()
@@ -123,8 +123,13 @@ class MonitoredApiInput(graphene.InputObjectType):
     apiUrl = graphene.String(required=True)
     assertionAndLimit = graphene.Field(AssertionAndLimitType,required=True)
     schedulingAndAlerting = graphene.Field(SchedulingAndAlertingType,required=True)
-    headers = graphene.String(required=True)
+    headers = graphene.String()
     methodType = graphene.String(required=True)
-    requestBody = graphene.String(required=True)
+    requestBody = graphene.String()
 
-
+class MonitoredApiUpdateInput(graphene.InputObjectType):
+    assertionAndLimit = graphene.Field(AssertionAndLimitType)
+    schedulingAndAlerting = graphene.Field(SchedulingAndAlertingType)
+    headers = graphene.String()
+    methodType = graphene.String()
+    requestBody = graphene.String()
