@@ -22,7 +22,7 @@ class MonitoredAPI(models.Model):
     apiName = models.CharField(max_length=255, null=True, blank=True)  # API name
     apiUrl = models.URLField()  # Common URL field for both REST and GraphQL
     headers = models.JSONField(null=True, blank=True)  # Optional custom headers
-    methodType = models.CharField(max_length=10, choices=METHOD_TYPE_CHOICES)
+    methodType = models.CharField(max_length=10, choices=METHOD_TYPE_CHOICES, default='GET')
     requestBody = models.TextField(null = True, blank = True) #
 
     # Tracking the monitoring status

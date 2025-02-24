@@ -1,8 +1,10 @@
+import uuid
 from django.db import models
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 
 class AssertionAndLimitResult(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     assertion_and_limit = models.ForeignKey(AssertionAndLimit, on_delete=models.CASCADE, null=False)
     apimetrics = models.ForeignKey(APIMetrics, on_delete=models.CASCADE, null=False)
     actual_value = models.TextField(null=True)
