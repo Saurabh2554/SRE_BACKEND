@@ -11,12 +11,18 @@ class AssertionAndLimit(models.Model):
 
     ]
     OPERATOR_CHOICES = [
-        ('equals', 'Equals'),
-        ('not_equals', 'Not Equals'),
-        ('greater_than', 'Greater Than'),
-        ('less_than', 'Less Than'),
-        ('contains', 'Contains'),
-    ]
+    ('equals', 'Equals'),
+    ('not_equals', 'Not Equals'),
+    ('is_empty', 'Is Empty'),
+    ('is_not_empty', 'Is Not Empty'),
+    ('greater_than', 'Greater Than'),
+    ('less_than', 'Less Than'),
+    ('contains', 'Contains'),
+    ('not_contains', 'Not Contains'),
+    ('is_null', 'Is Null'),
+    ('is_not_null', 'Is Not Null'),
+ ]
+   
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     api = models.ForeignKey(MonitoredAPI, on_delete=models.CASCADE, related_name='assertionAndLimit')
@@ -25,6 +31,7 @@ class AssertionAndLimit(models.Model):
     property = models.CharField(max_length=255, null=True, blank=True)
     operator = models.CharField(max_length=20, choices=OPERATOR_CHOICES, null=True, blank=True)
     expectedValue = models.CharField(max_length=255, null=True, blank=True)
+    regex  = models.TextField(null=True, blank=True)
 
     # class Meta:
     #     constraints = [
@@ -36,5 +43,4 @@ class AssertionAndLimit(models.Model):
 
     def __str__(self):
         property_info = f" - {self.property}" if self.property else ""
-        thresholds = f" (Degraded: {self.degradedResponseTime} ms, Failed: {self.failedResponseTime} ms)"
-        return f"{self.source}{property_info}: {self.operator} {self.expectedValue}{thresholds}"
+        return f"{self.source}{property_info}"

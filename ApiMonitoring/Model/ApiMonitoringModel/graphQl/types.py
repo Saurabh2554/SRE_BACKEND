@@ -17,6 +17,7 @@ class AssertionAndLimitType(graphene.InputObjectType):
     property = graphene.String(required=False)  # Optional, as per the model with null=True, blank=True
     operator = graphene.String()
     expectedValue = graphene.String()
+    regex = graphene.String()
 
 class SchedulingAndAlertingType(graphene.InputObjectType):
     apiCallInterval = graphene.Int()

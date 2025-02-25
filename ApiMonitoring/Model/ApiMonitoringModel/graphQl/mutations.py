@@ -49,27 +49,14 @@ def CreateMonitorInput(businessUnit, subBusinessUnit, input):
     'headers': input.headers,
     'methodType' : input.methodType,
     'requestBody' : input.requestBody,
+    'failedResponseTime' : input.failedResponseTime,
+    'degradedResponseTime' : input.degradedResponseTime,
     'isApiActive':True,
     }
 
     return monitored_api_data
 
 def is_valid_json_path(path):
-    """
-    Validates if the input string is a valid JSON path.
-
-    A valid JSON path must follow these rules:
-    - Starts with '$' (the root element in JSONPath).
-    - Supports dot notation (e.g., $.key) or bracket notation (e.g., $['key']).
-    - Array indices are valid (e.g., $['key'][0] or $.key[0]).
-    - No invalid characters or sequences.
-
-    Args:
-        path (str): The input string to validate.
-
-    Returns:
-        bool: True if the path is a valid JSON path, False otherwise.
-    """
     try:
         # Regex for JSON path with array index support
         json_path_pattern = r"^\$((\.[a-zA-Z_][a-zA-Z0-9_]*)|(\[['\"].+?['\"]\])|(\[\d+\]))*$"
@@ -88,9 +75,9 @@ def is_valid_json_path(path):
 def checkValidAssertion(assertionLimit,newMonitoredApi):
     # replace 
     VALID_OPERATORS = {
-    'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
-    'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
-    'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains']
+        'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
+        'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
+        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains', 'is_null','is_not_null']
     }
 
 

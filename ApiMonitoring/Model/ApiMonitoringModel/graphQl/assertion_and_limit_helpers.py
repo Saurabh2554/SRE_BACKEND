@@ -172,9 +172,9 @@ def checkAssertion(serviceId, metriceId, response):
                             "contains": str(expected_value) in str(extracted_value),
                             "not_contains": str(expected_value) not in str(extracted_value),
                             "is_empty": extracted_value in ["", None],
-                            "not_empty": extracted_value not in ["", None],
+                            "is_not_empty": extracted_value not in ["", None],
                             "is_null": extracted_value is None,
-                            "not_null": extracted_value is not None,
+                            "is_not_null": extracted_value is not None,
                         }
 
                         if condition_map.get(operator, False):
@@ -183,6 +183,10 @@ def checkAssertion(serviceId, metriceId, response):
                             break 
                         else:
                             actual_value = extracted_value
+        elif assertion.source == 'headers':
+            
+
+            pass
 
         # Store assertion result
         assertion_result = AssertionAndLimitResult.objects.create(

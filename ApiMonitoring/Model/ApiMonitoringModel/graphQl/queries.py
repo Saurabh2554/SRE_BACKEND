@@ -57,7 +57,7 @@ class Query(graphene.ObjectType):
         VALID_OPERATORS = {
         'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
         'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
-        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains']
+        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains', 'is_null','is_not_null']
     }
         
         ALLOW_PROPERTY = {
