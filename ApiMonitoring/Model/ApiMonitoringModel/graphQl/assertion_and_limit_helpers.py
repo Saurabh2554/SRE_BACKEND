@@ -4,6 +4,7 @@ from  graphql import GraphQLError
 from jsonpath_ng import parse 
 from jsonpath_ng.exceptions import JsonPathLexerError
 import decimal
+import re
 
 # def getValueFromJSON(json_data, json_path):
 #     try:
@@ -185,8 +186,34 @@ def checkAssertion(serviceId, metriceId, response):
                             actual_value = extracted_value
         elif assertion.source == 'headers':
             
+            operator = assertion.operator
+            actual_value = response.headers.get(assertion.property,None)
 
-            pass
+            if actual_value is not None and assertion.regex:
+                match = re.search(assertion.regex, actual_value)
+                if match:
+                    actual_value = match.group(1)
+                else:
+                    actual_value = None
+            
+            if actual_value is not None:
+                converted_expected = try_convert(assertion.expectedValue, type(actual_value))
+
+                condition_map = {
+                    "equals": actual_value == converted_expected,
+                    "not_equals": actual_value != converted_expected,
+                    "greater_than": converted_expected is not None and actual_value > converted_expected,
+                    "less_than" : converted_expected is not None and actual_value < converted_expected,
+                    "contains" : assertion.expectedValue in str(actual_value),
+                    "not_contains" : assertion.expectedValue not in str(actual_value),
+                    "is_empty" : actual_value in ["",None],
+                    "is_not_empty" : actual_value not in ["", None],
+                    "is_null" : actual_value is None,
+                    "is_not_null" : actual_value is not None,
+                }
+            if condition_map.get(operator,False):
+                status = True
+                            
 
         # Store assertion result
         assertion_result = AssertionAndLimitResult.objects.create(
