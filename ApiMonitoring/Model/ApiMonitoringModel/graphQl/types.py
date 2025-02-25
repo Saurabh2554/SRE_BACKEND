@@ -64,7 +64,7 @@ class AssertionAndLimitResultType(DjangoObjectType):
 class ApiMetricesType(DjangoObjectType):
     class Meta:
         model = MonitoredAPI
-        fields = ('id', 'apiName', 'methodType', 'apiUrl', 'isApiActive','assertionAndLimit','schedulingAndAlerting')
+        fields = ('id', 'apiName', 'methodType', 'apiUrl', 'isApiActive','assertionAndLimit','schedulingAndAlerting','degradedResponseTime','failedResponseTime')
 
     availability_uptime = graphene.Float(name='availability_uptime')
     success_rates = graphene.Float(name='success_rates')
