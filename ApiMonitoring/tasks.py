@@ -97,16 +97,16 @@ def monitorApiTask(self, serviceId):
         service = get_service(serviceId)
         result = hit_api(service.apiUrl, service.methodType, service.headers, service.requestBody)
 
-        # if result['response_time'] >= service.failedResponseTime:
-        #   failed = True
-        #   degraded = False
+        if result['response_time'] >= service.failedResponseTime:
+          failed = True
+          degraded = False
 
-        # elif result['response_time'] >= service.degradedResponseTime and result['response_time'] < service.degradedResponseTime:
-        #     degraded = True
-        #     failed = False
-        # else:
-        degraded = False
-        failed = False
+        elif result['response_time'] >= service.degradedResponseTime and result['response_time'] < service.degradedResponseTime:
+            degraded = True
+            failed = False
+        else:
+            degraded = False
+            failed = False
 
         apiMetrices = APIMetrics.objects.create(
             api = service,
