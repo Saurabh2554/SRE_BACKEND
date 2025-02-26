@@ -3,13 +3,14 @@ from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAP
 from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.hitApi import hit_api
-from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType,sourceTypeOperatorChoice
+from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType,sourceTypeOperatorChoice, OperatorChoice
 from graphql import GraphQLError
 import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 import requests
 from django.db.models import Prefetch
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.assertion_and_limit_helpers import VALID_OPERATORS, ALLOW_PROPERTY,SOURCE_CHOICES
 
 
 class Query(graphene.ObjectType):
@@ -53,24 +54,17 @@ class Query(graphene.ObjectType):
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
     
-    def resolve_assertion_source_operator_choices(self, info,source_type, **kwargs):
-        VALID_OPERATORS = {
-        'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
-        'headers': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
-        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains', 'is_null','is_not_null']
-    }
+    def resolve_assertion_source_operator_choices(self, info,source_type, **kwargs): 
         
-        ALLOW_PROPERTY = {
-    'headers': True,  
-    'json_body': True,  
-    'status_code': False
-    }
 
-    
         return sourceTypeOperatorChoice(
            source=source_type, 
+           sourceLabel=SOURCE_CHOICES.get(source_type,source_type),
            propertyVisibility = ALLOW_PROPERTY.get(source_type,False),
-           operators=VALID_OPERATORS.get(source_type,[] )
+           operators=[
+              OperatorChoice(operator=op, label=op.replace('_',' ').title()) 
+              for op in VALID_OPERATORS.get(source_type,[])
+           ]
         )
             
         

@@ -1,97 +1,3 @@
-from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service,get_metrices,get_assertions_for_service
-from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitResultModels import AssertionAndLimitResult
-from  graphql import GraphQLError
-from jsonpath_ng import parse 
-from jsonpath_ng.exceptions import JsonPathLexerError
-import decimal
-import re
-
-# def getValueFromJSON(json_data, json_path):
-#     try:
-#         jsonpath_expr = parse(json_path)
-#         match = jsonpath_expr.find(json_data)
-#         return [m.value for m in match] if match else None
-#     except (JsonPathLexerError):
-#         raise GraphQLError(f"Invalid JsonPath Syntax : {json_path}")
-#     except Exception as e:
-#         raise GraphQLError(f"Unexpected error while processing JSONPath '{json_path}': {e}")
-    
-# # fails if return type is datetime or any non convertable string True 
-# def try_convert(value, target_type):
-#     try:
-#         if isinstance(target_type,bool):
-#             return str(value).strip().lower() == "true"
-
-#         if isinstance(target_type,decimal.Decimal):
-#             return decimal.Decimal(value)
-        
-#         return type(target_type)(value)
-    
-#     except (ValueError, TypeError, decimal.InvalidOperation):
-#         return None
-
-
-# def checkAssertion(serviceId,metriceId,response):
-
-#     metrices = get_metrices(metriceId=metriceId)
-#     assertionAndLimits = get_assertions_for_service(serviceId=serviceId)
-    
-
-
-#     for assertion in assertionAndLimits:
-#         actual_value = None
-#         status = False
-#         if assertion.source == 'status_code':
-
-#             actual_value = metrices.statusCode
-
-#             if  assertion.expectedValue and ((assertion.operator == 'equals' and  int(assertion.expectedValue) == actual_value) or (assertion.operator == 'not_equals' and  int(assertion.expectedValue) != actual_value) or (assertion.operator == 'greater_than' and  int(assertion.expectedValue) < actual_value) or (assertion.operator == 'less_than' and  int(assertion.expectedValue) > actual_value)):
-#                 status = True  
-               
-
-#         if assertion.source == 'json_body':
-#             content_type = response.headers.get('Content-Type', '').lower()
-#             if 'json' in content_type:
-#                 parsed_response = response.json()
-#                 expected_value = assertion.expectedValue
-#                 operator = assertion.operator
-#                 extracted_values  = getValueFromJSON(parsed_response,assertion.property)
-                
-#                 if extracted_values is not None:
-#                     for actual_value in extracted_values:
-
-
-#                         if(operator in ['greater_than','less_than']):
-#                             converted_expected_value = try_convert(expected_value,actual_value)                               
-
-#                             if ( (converted_expected_value)  and  ((operator == 'greater_than' and actual_value > converted_expected_value) or
-#                                 (operator == 'less_than' and actual_value<converted_expected_value))):
-#                                 status = True
-                               
-#                         if actual_value: 
-#                             actual_value = str(actual_value)
-
-#                         # greater than or less than operaor type
-#                         if ( ( operator == 'equals' and actual_value == expected_value )  or 
-#                              ( operator == 'not_equals' and actual_value!=expected_value) or 
-#                              ( operator == 'contains' and expected_value in actual_value) or
-#                              ( operator == 'not_contains' and expected_value not in actual_value) or
-#                              ( operator == 'is_empty' and (actual_value == "" or actual_value is None)) or
-#                              ( operator == 'not_empty' and actual_value not in ["", None]) or
-#                              ( operator == 'is_null' and actual_value is None) or 
-#                              ( operator == 'not_null' and actual_value is not None)):
-#                             status = True
-
-#         assertionAndLimitResult = AssertionAndLimitResult.objects.create(
-#                 assertion_and_limit = assertion,
-#                 apimetrics = metrices,
-#                 actual_value = actual_value,
-#                 status=status
-#             )
-
-#         print(f'AssertionResult {assertionAndLimitResult}')
-
-
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import (
     get_service, get_metrices, get_assertions_for_service
 )
@@ -100,6 +6,27 @@ from graphql import GraphQLError
 from jsonpath_ng import parse
 from jsonpath_ng.exceptions import JsonPathLexerError
 import decimal
+import re
+
+SOURCE_CHOICES = {
+    'status_code': 'Status Code',
+    'headers': 'Headers',
+    'json_body': 'JSON Body'
+}
+
+VALID_OPERATORS = {
+        'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
+        'headers': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
+        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains', 'is_null','is_not_null']
+    }
+
+
+ALLOW_PROPERTY = {
+    'headers': True,  
+    'json_body': True,  
+    'status_code': False
+    }
+
 
 def getValueFromJSON(json_data, json_path):
     """Extracts values from JSON using a JsonPath expression."""
@@ -184,6 +111,7 @@ def checkAssertion(serviceId, metriceId, response):
                             break 
                         else:
                             actual_value = extracted_value
+
         elif assertion.source == 'headers':
             
             operator = assertion.operator
