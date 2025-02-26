@@ -56,12 +56,12 @@ class Query(graphene.ObjectType):
     def resolve_assertion_source_operator_choices(self, info,source_type, **kwargs):
         VALID_OPERATORS = {
         'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
-        'header': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
+        'headers': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
         'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains', 'is_null','is_not_null']
     }
         
         ALLOW_PROPERTY = {
-    'header': True,  
+    'headers': True,  
     'json_body': True,  
     'status_code': False
     }
