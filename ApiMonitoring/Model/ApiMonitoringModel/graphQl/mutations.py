@@ -13,6 +13,7 @@ from .types import MonitoredApiInput, MonitoredApiUpdateInput
 import json
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import UpdateTask, CreatePeriodicTask, get_service
 from django.db import transaction
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.assertion_and_limit_helpers import VALID_OPERATORS, ALLOW_PROPERTY
 
 def ExtractBusinessAndSubBusinessUnit(businessUnitId, subBusinessUnitId):
     try:
@@ -74,18 +75,6 @@ def is_valid_json_path(path):
 
 def checkValidAssertion(assertionLimit,newMonitoredApi):
     # replace 
-    VALID_OPERATORS = {
-        'status_code': ['equals', 'not_equals', 'greater_than', 'less_than'],
-        'headers': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains'],
-        'json_body': ['equals', 'not_equals', 'is_empty', 'is_not_empty', 'greater_than', 'less_than', 'contains', 'not_contains', 'is_null','is_not_null']
-    }
-
-
-    ALLOW_PROPERTY = {
-    'headers': True,  
-    'json_body': True,  
-    'status_code': False
-    }
 
     source = assertionLimit.get('source')
     property_value = assertionLimit.get('property')
