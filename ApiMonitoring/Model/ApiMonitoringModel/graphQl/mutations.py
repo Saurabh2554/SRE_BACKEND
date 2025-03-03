@@ -151,8 +151,8 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 # input.assertionAndLimit['api'] = newMonitoredApi
                 input.schedulingAndAlerting['api'] = newMonitoredApi
 
-                if len(assertion_limits)>0 :
-                    AssertionAndLimit.objects.bulk_create(assertion_limits)
+
+                AssertionAndLimit.objects.bulk_create(assertion_limits)
                     
                 SchedulingAndAlerting.objects.create(**input.schedulingAndAlerting)
 
