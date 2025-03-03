@@ -151,7 +151,9 @@ class ApiMonitorCreateMutation(graphene.Mutation):
                 # input.assertionAndLimit['api'] = newMonitoredApi
                 input.schedulingAndAlerting['api'] = newMonitoredApi
 
+
                 AssertionAndLimit.objects.bulk_create(assertion_limits)
+                    
                 SchedulingAndAlerting.objects.create(**input.schedulingAndAlerting)
 
                 taskResponse = CreatePeriodicTask(input.apiName, input.schedulingAndAlerting.apiCallInterval, newMonitoredApi.id)
