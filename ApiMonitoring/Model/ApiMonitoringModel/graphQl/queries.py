@@ -3,7 +3,7 @@ from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAP
 from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.hitApi import hit_api
-from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType,sourceTypeOperatorChoice, OperatorChoice
+from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType,SourceTypeOperatorChoice, OperatorChoice
 from graphql import GraphQLError
 import json
 from django.db.models import Q
@@ -17,8 +17,7 @@ class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
 
     assertion_source_operator_choices = graphene.Field(
-       sourceTypeOperatorChoice,
-       source_type=graphene.String(required=True)
+       graphene.List(SourceTypeOperatorChoice)
        )
 
     validate_api = graphene.Field(
@@ -54,19 +53,21 @@ class Query(graphene.ObjectType):
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
     
-    def resolve_assertion_source_operator_choices(self, info,source_type, **kwargs): 
+    def resolve_assertion_source_operator_choices(self, info, **kwargs):
+        source_operator_choices = [
+           SourceTypeOperatorChoice(
+            source=source_type, 
+            sourceLabel=SOURCE_CHOICES.get(source_type,source_type),
+            propertyVisibility = ALLOW_PROPERTY.get(source_type,False),
+            operators=[
+                OperatorChoice(operator=op, label=op.replace('_',' ').title()) 
+                for op in VALID_OPERATORS.get(source_type,[])
+            ]
+            )
+            for source_type in SOURCE_CHOICES.keys()
+        ]
         
-
-        return sourceTypeOperatorChoice(
-           source=source_type, 
-           sourceLabel=SOURCE_CHOICES.get(source_type,source_type),
-           propertyVisibility = ALLOW_PROPERTY.get(source_type,False),
-           operators=[
-              OperatorChoice(operator=op, label=op.replace('_',' ').title()) 
-              for op in VALID_OPERATORS.get(source_type,[])
-           ]
-        )
-            
+        return source_operator_choices
         
        
        

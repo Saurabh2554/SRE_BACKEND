@@ -34,7 +34,7 @@ class methodTypeChoice(graphene.ObjectType):
 class OperatorChoice(graphene.ObjectType):
     operator = graphene.String()
     label = graphene.String()
-class sourceTypeOperatorChoice(graphene.ObjectType):
+class SourceTypeOperatorChoice(graphene.ObjectType):
     source = graphene.String()
     sourceLabel = graphene.String()
     propertyVisibility = graphene.Boolean()
