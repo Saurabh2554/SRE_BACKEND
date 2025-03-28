@@ -4,9 +4,11 @@ from ApiMonitoring.Model.AuthTypeModel.authConfigModels import Authentication
 from ApiMonitoring.Model.ApiMonitoringModel.apiMetricesModels import APIMetrics
 from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
+from ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitResultModels import AssertionAndLimitResult
 
 admin.site.register(Authentication)
 admin.site.register(MonitoredAPI)
 admin.site.register(APIMetrics)
 admin.site.register(AssertionAndLimit)
 admin.site.register(SchedulingAndAlerting)
+admin.site.register(AssertionAndLimitResult)
