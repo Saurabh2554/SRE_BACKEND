@@ -3,17 +3,22 @@ from  ApiMonitoring.Model.ApiMonitoringModel.apiMonitorModels import MonitoredAP
 from  ApiMonitoring.Model.ApiMonitoringModel.schedulingAndAlertingModels import SchedulingAndAlerting
 from  ApiMonitoring.Model.ApiMonitoringModel.assertionAndLimitModels import AssertionAndLimit
 from ApiMonitoring.hitApi import hit_api
-from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType
+from .types import methodTypeChoice, ApiMetricesType, validateApiResponse, MoniterApiType,SourceTypeOperatorChoice, OperatorChoice
 from graphql import GraphQLError
 import json
 from django.db.models import Q
 from ApiMonitoring.Model.ApiMonitoringModel.graphQl.helpers import get_service
 import requests
 from django.db.models import Prefetch
+from ApiMonitoring.Model.ApiMonitoringModel.graphQl.assertion_and_limit_helpers import VALID_OPERATORS, ALLOW_PROPERTY,SOURCE_CHOICES
 
 
 class Query(graphene.ObjectType):
     method_type_choices = graphene.List(methodTypeChoice)
+
+    assertion_source_operator_choices = graphene.Field(
+       graphene.List(SourceTypeOperatorChoice)
+       )
 
     validate_api = graphene.Field(
         validateApiResponse, 
@@ -47,6 +52,26 @@ class Query(graphene.ObjectType):
     def resolve_method_type_choices(self, info, **kwargs): 
         choices = MonitoredAPI.METHOD_TYPE_CHOICES
         return  [ {'key': key, 'value': value} for key, value in choices]
+    
+    def resolve_assertion_source_operator_choices(self, info, **kwargs):
+        source_operator_choices = [
+           SourceTypeOperatorChoice(
+            source=source_type, 
+            sourceLabel=SOURCE_CHOICES.get(source_type,source_type),
+            propertyVisibility = ALLOW_PROPERTY.get(source_type,False),
+            operators=[
+                OperatorChoice(operator=op, label=op.replace('_',' ').title()) 
+                for op in VALID_OPERATORS.get(source_type,[])
+            ]
+            )
+            for source_type in SOURCE_CHOICES.keys()
+        ]
+        
+        return source_operator_choices
+        
+       
+       
+    
 
     def resolve_validate_api(self, info, apiUrl, methodType, requestBody=None, headers=None):
         try:

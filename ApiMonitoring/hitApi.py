@@ -58,6 +58,7 @@ def handle_response(response, start_time, end_time):
                 'start_time': start_time,
                 'end_time':end_time,
                 'response_size' : len(response.content),
+                'response_body' : response
                 }
 
     except requests.JSONDecodeError as e:
